@@ -68,13 +68,15 @@ cualquier chat futuro tenga acceso.
    - ⬜ **NO FACTURAR** — viene del claim pero no está en el resumen (y no es Dalia): no se factura
    - 🔴 **SIN DATO** — no hay información para ese viaje
 6. **Exportar Excel** → guarda el archivo terminado. La salida tiene **UNA HOJA POR DÍA** (`10-05`, `10-06`, …),
-   cada una con las 9 columnas exactas, listas para revisar día por día.
+   cada una con las columnas exactas (`Driver, License, VIN, Trip Number, Appt. Date, Member Info, PU Time,
+   DropOff Time, Milage, Cost`), listas para revisar día por día.
 
 > **Idioma y tema:** arriba a la derecha hay dos botones — uno de **idioma** (bandera 🇻🇪/🇺🇸, español por defecto)
 > y uno de **tema** (sol/luna, **modo oscuro por defecto**). Un clic en cada uno y listo.
 >
-> **PU Time:** el archivo de viajes trae la hora de la **cita** (dropoff), no la recogida. El app **estima** el
-> pickup con `cita − (14 min + 1.4×millas) ± 3 min`, calibrado con los datos históricos (ver `docs/PU_TIME_FINDINGS.md`).
+> **PU Time / DropOff Time:** el archivo de viajes trae la hora de la **cita** (dropoff), no la recogida. El app
+> **estima** el pickup con `cita − (14 min + 1.4×millas) ± 3 min` y el **DropOff** unos minutos antes de la cita,
+> calibrado con los datos históricos (ver `docs/PU_TIME_FINDINGS.md`).
 
 ### Opción B — Python (para desarrollo)
 ```
