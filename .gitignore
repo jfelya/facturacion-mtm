@@ -1,0 +1,18 @@
+# ---- Not needed to RUN the app (business data, research & context) ----
+data/
+docs/
+recon/
+selftest.py
+
+# ---- Generated output & build artifacts ----
+output/
+build/
+dist/
+*.exe
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.spec.bak

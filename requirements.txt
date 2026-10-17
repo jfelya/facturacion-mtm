@@ -1,0 +1,5 @@
+# Runtime
+openpyxl>=3.1
+
+# Packaging (only needed to build the .exe)
+pyinstaller>=6.0
