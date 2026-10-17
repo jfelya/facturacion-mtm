@@ -24,6 +24,10 @@ from .common import norm_num
 # placeholder / non-real driver numbers in Informacion de Drivers.xlsx
 PLACEHOLDER_DRIVERS = {"999"}
 
+# Members billed without an MTM resumen row: the user's usual driver (Dalia -> 349 Daylenis).
+# Used to pre-select the suggestion for those rows; still shown for confirmation.
+PREFERRED_DRIVER = {"DALIA ALFONSO": "349"}
+
 # ---- estimated pickup time from the appointment/dropoff time ----
 # The provider's trip file `Time` is the APPOINTMENT (dropoff) time, not the pickup.
 # Calibrated from the archived BULK UPLOAD scheduled times (see docs/PU_TIME_FINDINGS.md):
@@ -144,7 +148,7 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
              "no_data": 0, "pu_filled": 0, "pu_willcall": 0, "pu_missing": 0,
              "flagged_unapproved": 0, "note_overrides": 0,
              "milage_from_trips": 0, "needs_driver": 0, "suggested": 0, "not_billed": 0,
-             "pu_estimated": 0, "dropoff_filled": 0}
+             "pu_estimated": 0, "dropoff_filled": 0, "paired": 0}
 
     groups = {}
     for row in claim["rows"]:
@@ -172,6 +176,15 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
         if pending and rest:
             order = {"A": 0, "B": 1} if strategy == "first_row_A" else {"B": 0, "A": 1}
             targets = sorted(pending, key=lambda r: (order.get(r["leg"], 9), r["trip"]))
+            # 'pair' (user's usual way): give BOTH legs the same driver taken from the
+            # first resumen row, as long as that driver is approved.
+            if strategy == "pair" and len(rest) == 2 and rest[0].get("driver"):
+                pd = rest[0]["driver"]
+                if rest[0]["driver"] != rest[1].get("driver"):
+                    review.append(f"PAR-PAIR {date} {member}: resumen {rest[0]['driver']}/{rest[1].get('driver')} "
+                                  f"-> se usa {pd} en ambas patas")
+                    stats["paired"] += 1
+                rest = [dict(x, driver=pd) for x in rest]
             if len(rest) != len(targets):
                 warnings.append(
                     f"{date} {member}: {len(targets)} viaje(s) vs {len(rest)} fila(s) de resumen "
@@ -300,6 +313,12 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             continue
         cands = driver_candidates.get(r["date"]) or []
         best = cands[0] if cands else None
+        # prefer the member's usual driver (e.g. Dalia -> 349) when it's approved
+        pref = PREFERRED_DRIVER.get((r.get("member") or "").upper())
+        if pref and drivers and pref in drivers["table"]:
+            counts = ((driver_usage or {}).get(r["date"]) or {}).get("count", {})
+            best = {"num": pref, "name": drivers["table"][pref]["name"],
+                    "count": counts.get(pref, 0), "free": counts.get(pref, 0) == 0}
         # only suggest when we actually know that day's workload (a resumen exists for it)
         have_info = driver_usage is not None and r["date"] in driver_usage
         if suggest_driver and best and have_info:

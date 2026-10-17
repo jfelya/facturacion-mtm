@@ -57,8 +57,9 @@ STRINGS = {
         "hint_drivers": "Solo si no está dentro de la carpeta de fuentes (se busca solo si lo dejas vacío).",
         "browse": "Elegir…",
         "sec_options": "Opciones",
-        "lbl_pairs": "Pares 0A/0B:",
-        "pair_b": "1ª fila → B (recomendado)",
+        "lbl_pairs": "Driver patas A/B:",
+        "pair_pair": "Mismo en ambas (recomendado)",
+        "pair_b": "1ª fila → B",
         "pair_a": "1ª fila → A",
         "lbl_willcall": "Will Call = hora pata A +",
         "hours": "h",
@@ -128,8 +129,9 @@ STRINGS = {
         "hint_drivers": "Only if it is not inside the sources folder (it's auto-found when left empty).",
         "browse": "Browse…",
         "sec_options": "Options",
-        "lbl_pairs": "0A/0B pairs:",
-        "pair_b": "1st resumen row → B (recommended)",
+        "lbl_pairs": "A/B legs driver:",
+        "pair_pair": "Same on both (recommended)",
+        "pair_b": "1st row → B",
         "pair_a": "1st row → A",
         "lbl_willcall": "Will Call = A-leg time +",
         "hours": "h",
@@ -290,7 +292,7 @@ class App:
         self.claim_var = tk.StringVar()
         self.folder_var = tk.StringVar()
         self.drivers_var = tk.StringVar()
-        self.strategy_var = tk.StringVar(value="first_row_B")
+        self.strategy_var = tk.StringVar(value="pair")
         self.willcall_var = tk.StringVar(value="2")
         self.suggest_var = tk.BooleanVar(value=True)
 
@@ -335,8 +337,10 @@ class App:
         opt.pack(fill="x")
         self.lbl_pairs = ttk.Label(opt)
         self.lbl_pairs.pack(side="left")
+        self.rb_pair = ttk.Radiobutton(opt, text="", variable=self.strategy_var, value="pair")
+        self.rb_pair.pack(side="left", padx=(6, 0))
         self.rb_b = ttk.Radiobutton(opt, text="", variable=self.strategy_var, value="first_row_B")
-        self.rb_b.pack(side="left", padx=(6, 0))
+        self.rb_b.pack(side="left", padx=(10, 0))
         self.rb_a = ttk.Radiobutton(opt, text="", variable=self.strategy_var, value="first_row_A")
         self.rb_a.pack(side="left", padx=(10, 0))
         self.lbl_willcall = ttk.Label(opt)
@@ -533,6 +537,7 @@ class App:
             row._hint.config(text=self.t(f"hint_{key}"))
             row._btn.config(text=self.t("browse"))
         self.lbl_pairs.config(text=self.t("lbl_pairs"))
+        self.rb_pair.config(text=self.t("pair_pair"))
         self.rb_b.config(text=self.t("pair_b"))
         self.rb_a.config(text=self.t("pair_a"))
         self.lbl_willcall.config(text=self.t("lbl_willcall"))

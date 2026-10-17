@@ -26,7 +26,7 @@ def main_cli(args):
 
     claim, folder = args[0], args[1]
     drivers = out = None
-    strategy = "first_row_B"
+    strategy = "pair"
     suggest = True
     keep_order = False
     ratio, buffer = 1.4, 14

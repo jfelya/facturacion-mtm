@@ -146,7 +146,7 @@ def build_trips(files, claim, warnings):
     return by_date
 
 
-def run_job(claim_path, sources_folder, drivers_path=None, strategy="first_row_B",
+def run_job(claim_path, sources_folder, drivers_path=None, strategy="pair",
             willcall_hours=2.0, suggest_driver=True, sort_by_date=True,
             pickup_ratio=1.4, pickup_buffer=14, pickup_jitter=3):
     """Full pipeline. Returns {'claim', 'report', 'sources', 'claim_path'} or {'error'}."""
