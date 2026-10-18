@@ -77,6 +77,9 @@ cualquier chat futuro tenga acceso.
 > **PU Time / DropOff Time:** el archivo de viajes trae la hora de la **cita** (dropoff), no la recogida. El app
 > **estima** el pickup con `cita − (14 min + 1.4×millas) ± 3 min` y el **DropOff** unos minutos antes de la cita,
 > calibrado con los datos históricos (ver `docs/PU_TIME_FINDINGS.md`).
+>
+> **Drivers:** por defecto el app **empareja las patas A y B con el mismo driver** y, si dos viajeros del día
+> comparten los mismos candidatos, los **reparte** (opción "Repartir…" para desactivarlo). Dalia siempre prefiere 349.
 
 ### Opción B — Python (para desarrollo)
 ```

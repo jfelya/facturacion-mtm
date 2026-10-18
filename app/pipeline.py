@@ -147,7 +147,7 @@ def build_trips(files, claim, warnings):
 
 
 def run_job(claim_path, sources_folder, drivers_path=None, strategy="pair",
-            willcall_hours=2.0, suggest_driver=True, sort_by_date=True,
+            willcall_hours=2.0, suggest_driver=True, sort_by_date=True, spread=True,
             pickup_ratio=1.4, pickup_buffer=14, pickup_jitter=3):
     """Full pipeline. Returns {'claim', 'report', 'sources', 'claim_path'} or {'error'}."""
     claim_path = Path(claim_path)
@@ -176,7 +176,7 @@ def run_job(claim_path, sources_folder, drivers_path=None, strategy="pair",
     report = fill_claim(
         claim, resumen_index, trips_by_date, drivers,
         strategy=strategy, willcall_delta=timedelta(hours=willcall_hours),
-        driver_usage=driver_usage, suggest_driver=suggest_driver,
+        driver_usage=driver_usage, suggest_driver=suggest_driver, spread=spread,
         pickup_ratio=pickup_ratio, pickup_buffer=pickup_buffer, pickup_jitter=pickup_jitter,
     )
     report["warnings"] = warnings + report["warnings"]

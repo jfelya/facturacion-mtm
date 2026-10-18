@@ -64,6 +64,7 @@ STRINGS = {
         "lbl_willcall": "Will Call = hora pata A +",
         "hours": "h",
         "chk_suggest": "Sugerir driver (el menos ocupado)",
+        "chk_spread": "Repartir drivers cuando dos viajeros comparten los mismos",
         "btn_run": "Procesar",
         "btn_export": "Exportar Excel…",
         "btn_csv": "Guardar reporte (CSV)…",
@@ -136,6 +137,7 @@ STRINGS = {
         "lbl_willcall": "Will Call = A-leg time +",
         "hours": "h",
         "chk_suggest": "Suggest driver (least busy)",
+        "chk_spread": "Split drivers when two members share the same ones",
         "btn_run": "Process",
         "btn_export": "Export Excel…",
         "btn_csv": "Save report (CSV)…",
@@ -295,6 +297,7 @@ class App:
         self.strategy_var = tk.StringVar(value="pair")
         self.willcall_var = tk.StringVar(value="2")
         self.suggest_var = tk.BooleanVar(value=True)
+        self.spread_var = tk.BooleanVar(value=True)
 
         self._build()
         self._apply_theme()
@@ -349,8 +352,13 @@ class App:
                     font=self.font).pack(side="left")
         self.lbl_hours = ttk.Label(opt)
         self.lbl_hours.pack(side="left", padx=(3, 0))
-        self.chk_suggest = ttk.Checkbutton(opt, text="", variable=self.suggest_var)
-        self.chk_suggest.pack(side="left", padx=(18, 0))
+
+        opt2 = ttk.Frame(body, padding=(4, 0, 4, 6))
+        opt2.pack(fill="x")
+        self.chk_suggest = ttk.Checkbutton(opt2, text="", variable=self.suggest_var)
+        self.chk_suggest.pack(side="left")
+        self.chk_spread = ttk.Checkbutton(opt2, text="", variable=self.spread_var)
+        self.chk_spread.pack(side="left", padx=(18, 0))
 
         act = ttk.Frame(body, padding=(4, 2, 4, 8))
         act.pack(fill="x")
@@ -543,6 +551,7 @@ class App:
         self.lbl_willcall.config(text=self.t("lbl_willcall"))
         self.lbl_hours.config(text=self.t("hours"))
         self.chk_suggest.config(text=self.t("chk_suggest"))
+        self.chk_spread.config(text=self.t("chk_spread"))
         self.btn_run.config(text=self.t("btn_run"))
         self.btn_export.config(text=self.t("btn_export"))
         self.btn_csv.config(text=self.t("btn_csv"))
@@ -604,13 +613,14 @@ class App:
         self.btn_csv.config(state="disabled")
         self.status.config(text=self.t("st_working"), foreground=THEMES[self.theme]["muted"])
         self.txt.delete("1.0", "end")
-        args = (claim, folder, drivers, self.strategy_var.get(), delta, self.suggest_var.get())
+        args = (claim, folder, drivers, self.strategy_var.get(), delta,
+                self.suggest_var.get(), self.spread_var.get())
         threading.Thread(target=self._work, args=args, daemon=True).start()
 
-    def _work(self, claim, folder, drivers, strategy, delta, suggest):
+    def _work(self, claim, folder, drivers, strategy, delta, suggest, spread):
         try:
             res = run_job(claim, folder, drivers_path=drivers, strategy=strategy,
-                          willcall_hours=delta, suggest_driver=suggest)
+                          willcall_hours=delta, suggest_driver=suggest, spread=spread)
         except Exception as e:  # pragma: no cover
             res = {"error": f"{type(e).__name__}: {e}"}
         self.root.after(0, lambda: self._finish(res))

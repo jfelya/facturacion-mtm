@@ -132,8 +132,8 @@ def _assign(row, x, drivers, warnings, review, stats):
 
 
 def fill_claim(claim, resumen_index, trips_by_date, drivers,
-               strategy="first_row_B", willcall_delta=timedelta(hours=2),
-               driver_usage=None, suggest_driver=True,
+               strategy="pair", willcall_delta=timedelta(hours=2),
+               driver_usage=None, suggest_driver=True, spread=True,
                pickup_ratio=PICKUP_RATIO, pickup_buffer=PICKUP_BUFFER, pickup_jitter=PICKUP_JITTER):
     """Modifies claim['rows'] in place. Returns report dict.
 
@@ -148,12 +148,35 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
              "no_data": 0, "pu_filled": 0, "pu_willcall": 0, "pu_missing": 0,
              "flagged_unapproved": 0, "note_overrides": 0,
              "milage_from_trips": 0, "needs_driver": 0, "suggested": 0, "not_billed": 0,
-             "pu_estimated": 0, "dropoff_filled": 0, "paired": 0}
+             "pu_estimated": 0, "dropoff_filled": 0, "paired": 0, "spread": 0}
 
     groups = {}
     for row in claim["rows"]:
         row.setdefault("flag", "")
         groups.setdefault((row["date"], row["member"]), []).append(row)
+
+    # 'spread' (default): when two+ members on the same day share the same candidate
+    # drivers, give them DIFFERENT ones (ordered by how busy each driver is), like the user
+    # does (LINDA->394, JANET->220). The pair driver otherwise comes from the 1st resumen row.
+    pair_override = {}
+    if strategy == "pair" and spread:
+        per_date = {}
+        for (date, member) in groups:
+            drvs = sorted({x["driver"] for x in resumen_index.get((date, member), []) if x["driver"]})
+            if len(drvs) >= 2:
+                per_date.setdefault(date, []).append((member, tuple(drvs)))
+        for date, items in per_date.items():
+            by_key = {}
+            for member, key in items:
+                by_key.setdefault(key, []).append(member)
+            counts = ((driver_usage or {}).get(date) or {}).get("count", {})
+            for key, members in by_key.items():
+                if len(members) < 2:
+                    continue
+                order = sorted(key, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
+                for i, member in enumerate(members):
+                    pair_override[(date, member)] = order[i % len(order)]
+                stats["spread"] += 1
 
     for (date, member), rows in sorted(groups.items()):
         res = _halve_if_doubled(list(resumen_index.get((date, member), [])))
@@ -179,7 +202,12 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             # 'pair' (user's usual way): give BOTH legs the same driver taken from the
             # first resumen row, as long as that driver is approved.
             if strategy == "pair" and len(rest) == 2 and rest[0].get("driver"):
-                pd = rest[0]["driver"]
+                pd = pair_override.get((date, member))
+                if not pd:
+                    # a note like "Driver Marielkis, auto 309" defines the driver for BOTH legs
+                    note_drv = next((_note_driver(x.get("note")) for x in rest
+                                     if _note_driver(x.get("note"))), "")
+                    pd = note_drv or rest[0]["driver"]
                 if rest[0]["driver"] != rest[1].get("driver"):
                     review.append(f"PAR-PAIR {date} {member}: resumen {rest[0]['driver']}/{rest[1].get('driver')} "
                                   f"-> se usa {pd} en ambas patas")

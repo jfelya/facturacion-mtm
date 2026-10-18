@@ -28,6 +28,7 @@ def main_cli(args):
     drivers = out = None
     strategy = "pair"
     suggest = True
+    spread = True
     keep_order = False
     ratio, buffer = 1.4, 14
     rest = args[2:]
@@ -45,13 +46,15 @@ def main_cli(args):
             buffer = float(rest[i + 1]); i += 2
         elif rest[i] == "--no-suggest":
             suggest = False; i += 1
+        elif rest[i] == "--no-spread":
+            spread = False; i += 1
         elif rest[i] == "--keep-order":
             keep_order = True; i += 1
         else:
             i += 1
 
     res = run_job(claim, folder, drivers_path=drivers, strategy=strategy,
-                  suggest_driver=suggest, sort_by_date=not keep_order,
+                  suggest_driver=suggest, sort_by_date=not keep_order, spread=spread,
                   pickup_ratio=ratio, pickup_buffer=buffer)
     if res.get("error"):
         p("ERROR:", res["error"])
