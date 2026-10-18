@@ -28,6 +28,19 @@ PLACEHOLDER_DRIVERS = {"999"}
 # Used to pre-select the suggestion for those rows; still shown for confirmation.
 PREFERRED_DRIVER = {"DALIA ALFONSO": "349"}
 
+# County grouping (user rule, 18-oct): drivers only serve trips in their OWN county, because
+# it would be odd for a driver to work another area. 20/30/166/413 = VOLUSIA, rest = MARION.
+VOLUSIA_CITIES = ("daytona", "deland", "deltona", "ormond", "port orange", "new smyrna",
+                  "edgewater", "debary", "orange city", "south daytona", "holly hill",
+                  "ponce inlet", "oak hill", "pierson", "lake helen", "osteen",
+                  "seville", "astor", "enterprise", "glenwood", "de leon springs")
+DEFAULT_COUNTY = "MARION"
+
+
+def _city_county(city):
+    c = (city or "").lower()
+    return "VOLUSIA" if any(k in c for k in VOLUSIA_CITIES) else DEFAULT_COUNTY
+
 # ---- estimated pickup time from the appointment/dropoff time ----
 # The provider's trip file `Time` is the APPOINTMENT (dropoff) time, not the pickup.
 # Calibrated from the archived BULK UPLOAD scheduled times (see docs/PU_TIME_FINDINGS.md):
@@ -80,6 +93,10 @@ def _drv_sort(n):
 
 def _assign(row, x, drivers, warnings, review, stats):
     row["src_resumen"] = True          # this trip WAS matched to a resumen row (even if driver unapproved)
+    if drivers:
+        cty = (drivers["table"].get(x["driver"]) or {}).get("county")
+        if cty:
+            row["county"] = cty        # the trip belongs to the resumen driver's county
     number = x["driver"]
     note = x.get("note") or ""
     driver = number
@@ -320,17 +337,37 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
     suggested = []
     not_billed = []
     needs = [r for r in claim["rows"] if not r.get("driver")]
+
+    # county of every row: from the resumen driver when matched, else from the trip's city
+    city_by_trip = {}
+    for _d, _ts in (trips_by_date or {}).items():
+        for _t in _ts:
+            city_by_trip[_t["trip"].upper()] = _t.get("city") or ""
+    member_county = {}
+    for r in claim["rows"]:
+        if r.get("county"):
+            member_county.setdefault((r["date"], r["member"]), r["county"])
+    for r in claim["rows"]:
+        if r.get("county"):
+            continue
+        r["county"] = (member_county.get((r["date"], r["member"]))
+                       or _city_county(city_by_trip.get(r["trip"].upper(), "")))
+
     if needs and drivers:
         allowed = drivers.get("allowed") or set(drivers["table"])
         approved = [n for n in sorted(allowed, key=_drv_sort) if n not in PLACEHOLDER_DRIVERS]
         for d in sorted({r["date"] for r in needs}):
             counts = ((driver_usage or {}).get(d) or {}).get("count", {})
-            ranked = sorted(approved, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
-            driver_candidates[d] = [
-                {"num": n, "name": drivers["table"][n]["name"],
-                 "count": counts.get(n, 0), "free": counts.get(n, 0) == 0}
-                for n in ranked
-            ]
+            for county in sorted({r.get("county") or "" for r in needs if r["date"] == d}):
+                pool = [n for n in approved
+                        if not county or (drivers["table"].get(n, {}).get("county") or "") == county]
+                ranked = sorted(pool, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
+                driver_candidates[(d, county)] = [
+                    {"num": n, "name": drivers["table"][n]["name"],
+                     "count": counts.get(n, 0), "free": counts.get(n, 0) == 0}
+                    for n in ranked
+                ]
+
     for r in needs:
         is_dalia = "DALIA" in (r.get("member") or "").upper()
         billable = r.get("src_resumen") or is_dalia
@@ -342,15 +379,14 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             warnings.append(f"{r['date']} {r['member']} {r['trip']}: viene del claim pero NO está en el "
                             f"resumen del día y no es Dalia -> NO se factura (revisar)")
             continue
-        cands = driver_candidates.get(r["date"]) or []
-        best = cands[0] if cands else None
-        # prefer the member's usual driver (e.g. Dalia -> 349) when it's approved
+        cands = list(driver_candidates.get((r["date"], r.get("county") or "")) or [])
         pref = PREFERRED_DRIVER.get((r.get("member") or "").upper())
-        allowed = drivers.get("allowed") or set(drivers["table"]) if drivers else set()
-        if pref and drivers and pref in allowed:
-            counts = ((driver_usage or {}).get(r["date"]) or {}).get("count", {})
-            best = {"num": pref, "name": drivers["table"][pref]["name"],
-                    "count": counts.get(pref, 0), "free": counts.get(pref, 0) == 0}
+        # ranking: drivers that are FREE that day first, then the member's usual driver (e.g. Dalia->349),
+        # then fewest trips. All candidates are already limited to the trip's county.
+        if pref:
+            cands.sort(key=lambda c: (0 if c["count"] == 0 else 1, 0 if c["num"] == pref else 1,
+                                      c["count"], _drv_sort(c["num"])))
+        best = cands[0] if cands else None
         # only suggest when we actually know that day's workload (a resumen exists for it)
         have_info = driver_usage is not None and r["date"] in driver_usage
         if suggest_driver and best and have_info:
@@ -367,8 +403,8 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
                           f"{best['name']} ({best['count']} viajes ese día) - confirmar")
         else:
             r["flag"] = "revisar" if r.get("flag") == "revisar" else "elegir"
-            needs_driver.append({"date": r["date"], "trip": r["trip"],
-                                 "member": r["member"], "milage": r.get("milage")})
+            needs_driver.append({"date": r["date"], "trip": r["trip"], "member": r["member"],
+                                 "milage": r.get("milage"), "county": r.get("county") or ""})
             stats["needs_driver"] += 1
 
     # advisory: MTM resumen groups with no claim row at all -> not billed

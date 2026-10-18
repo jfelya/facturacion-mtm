@@ -213,6 +213,7 @@ def parse_trips(path):
     i_miles = idx("Trip Mileage")
     i_cost = idx("Trip Cost")
     i_date = idx("Appointment Date")
+    i_city = idx("Pickup City", "Pickup City ", "PU City")
 
     out = []
     for r in nonempty(rows[hdr_i + 1:]):
@@ -229,6 +230,7 @@ def parse_trips(path):
             "time": tv,
             "first": s(r[i_first]) if i_first is not None and i_first < len(r) else "",
             "last": s(r[i_last]) if i_last is not None and i_last < len(r) else "",
+            "city": s(r[i_city]) if i_city is not None and i_city < len(r) else "",
             "miles": to_float(r[i_miles]) if i_miles is not None and i_miles < len(r) else None,
             "cost": r[i_cost] if i_cost is not None and i_cost < len(r) else None,
             "date": to_iso(r[i_date]) if i_date is not None and i_date < len(r) else None,
@@ -257,6 +259,7 @@ def parse_drivers(path):
     hdr = [s(c) for c in rows[hdr_i]]
     i_name, i_lic = hdr.index("DRIVER"), hdr.index("LICENSE NUMBER")
     i_vin, i_num = hdr.index("VIN Number"), hdr.index("NUMERO")
+    i_cty = hdr.index("COUNTY") if "COUNTY" in hdr else None
 
     table = {}
     names = {}
@@ -271,12 +274,14 @@ def parse_drivers(path):
             lic = ""
         if vin in ("-", "N/A"):
             vin = ""
+        county = s(r[i_cty]).strip().upper() if i_cty is not None and i_cty < len(r) else ""
         cur = table.get(num)
         if cur is None or (not cur["vin"] and vin):
             table[num] = {
                 "license": lic or (cur or {}).get("license", ""),
                 "vin": vin or (cur or {}).get("vin", ""),
                 "name": norm_name(r[i_name]),
+                "county": county or (cur or {}).get("county", ""),
             }
         nm = norm_name(r[i_name])
         if nm:

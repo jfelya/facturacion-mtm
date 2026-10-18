@@ -119,13 +119,14 @@ def report_text(result, lang="es"):
         lines.append("")
         lines.append(f"{t['needs_title']} ({len(needs)})")
         lines.append("  " + t["needs_hint"])
-        for d in sorted({x["date"] for x in needs}):
-            lines.append(f"  {d}:")
+        for d in sorted({(x["date"], x.get("county") or "") for x in needs}):
+            date, county = d
+            lines.append(f"  {date}" + (f" [{county}]" if county else "") + ":")
             for c in cand.get(d, []):
                 tag = t["sugg_free"] if c["free"] else f"{c['count']} {t['sugg_trips']}"
                 lines.append(f"      {t['option']}: {c['num']} {c['name']}  ({tag})")
             for x in needs:
-                if x["date"] == d:
+                if x["date"] == date and (x.get("county") or "") == county:
                     mi = x["milage"] if x["milage"] is not None else "-"
                     lines.append(f"      -> {x['member']} {x['trip']} ({t['miles']} {mi})")
 

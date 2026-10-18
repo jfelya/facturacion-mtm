@@ -684,7 +684,8 @@ class App:
         if not res:
             return
         res["report"]["needs_driver"] = [
-            {"date": r["date"], "trip": r["trip"], "member": r["member"], "milage": r.get("milage")}
+            {"date": r["date"], "trip": r["trip"], "member": r["member"], "milage": r.get("milage"),
+             "county": r.get("county") or ""}
             for r in res["claim"]["rows"] if not r.get("driver") and r.get("flag") != "nofacturar"
         ]
         active = {r["trip"] for r in res["claim"]["rows"]
@@ -755,7 +756,8 @@ class App:
         row = self._assign_map.get(sel[0])
         if not row:
             return
-        cands = (self.result["report"].get("driver_candidates") or {}).get(row.get("date"), [])
+        cands = (self.result["report"].get("driver_candidates") or {}).get(
+            (row.get("date"), row.get("county") or ""), [])
         vals = []
         cur = 0
         for i, c in enumerate(cands):
