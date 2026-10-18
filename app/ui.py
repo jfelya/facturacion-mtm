@@ -73,6 +73,7 @@ STRINGS = {
         "btn_export": "Exportar Excel…",
         "btn_csv": "Guardar reporte (CSV)…",
         "btn_driverlogs": "Generar driverlogs (.docx)",
+        "btn_bulk": "Generar BULK UPLOAD",
         "btn_help": "¿Qué archivos necesito?",
         "tab_preview": "Vista previa",
         "tab_report": "Reporte",
@@ -102,6 +103,9 @@ STRINGS = {
                          "¿Continuar de todas formas? (Proceed) o Cancelar para agregarlos."),
         "dl_title": "Driverlogs generados",
         "dl_body": "Se generaron {n} driverlog(s) en:\n{root}\n\nSin plantilla (omitidos): {skipped}\nErrores: {errors}",
+        "bulk_title": "BULK UPLOAD generados",
+        "bulk_body": ("Se generaron {n} archivo(s) «BULK UPLOAD <fecha>.xlsx» en:\n{root}\n\n"
+                      "Filas omitidas (sin driver / no facturar): {excluded}\nErrores: {errors}"),
         "err_title": "Falta",
         "prev_summary": "RESUMEN VISTA PREVIA",
         "exp_title": "Guardado",
@@ -159,6 +163,7 @@ STRINGS = {
         "btn_export": "Export Excel…",
         "btn_csv": "Save report (CSV)…",
         "btn_driverlogs": "Generate driverlogs (.docx)",
+        "btn_bulk": "Generate BULK UPLOAD",
         "btn_help": "What files do I need?",
         "tab_preview": "Preview",
         "tab_report": "Report",
@@ -188,6 +193,9 @@ STRINGS = {
                          "Proceed anyway? (or Cancel to add them)"),
         "dl_title": "Driverlogs generated",
         "dl_body": "Generated {n} driverlog(s) in:\n{root}\n\nNo template (skipped): {skipped}\nErrors: {errors}",
+        "bulk_title": "BULK UPLOAD generated",
+        "bulk_body": ("Generated {n} «BULK UPLOAD <date>.xlsx» file(s) in:\n{root}\n\n"
+                      "Rows skipped (no driver / not billed): {excluded}\nErrors: {errors}"),
         "err_title": "Missing",
         "prev_summary": "PREVIEW SUMMARY",
         "exp_title": "Saved",
@@ -417,6 +425,8 @@ class App:
         self.btn_csv.pack(side="left")
         self.btn_driverlogs = ttk.Button(act, command=self.generate_driverlogs, state="disabled")
         self.btn_driverlogs.pack(side="left", padx=6)
+        self.btn_bulk = ttk.Button(act, command=self.generate_bulk, state="disabled")
+        self.btn_bulk.pack(side="left")
 
         nb = ttk.Notebook(self.root)
         nb.pack(fill="both", expand=True, padx=14, pady=(0, 6))
@@ -604,6 +614,7 @@ class App:
         self.btn_export.config(text=self.t("btn_export"))
         self.btn_csv.config(text=self.t("btn_csv"))
         self.btn_driverlogs.config(text=self.t("btn_driverlogs"))
+        self.btn_bulk.config(text=self.t("btn_bulk"))
         self.btn_help.config(text=self.t("btn_help"))
         self.nb.tab(self.tabs[0], text=self.t("tab_preview"))
         self.nb.tab(self.tabs[1], text=self.t("tab_report"))
@@ -681,6 +692,7 @@ class App:
         self.btn_export.config(state="disabled")
         self.btn_csv.config(state="disabled")
         self.btn_driverlogs.config(state="disabled")
+        self.btn_bulk.config(state="disabled")
         self.status.config(text=self.t("st_working"), foreground=THEMES[self.theme]["muted"])
         self.txt.delete("1.0", "end")
         args = (claim, folder, drivers, self.driverlogs_var.get().strip() or None,
@@ -706,6 +718,7 @@ class App:
         self.btn_export.config(state="normal")
         self.btn_csv.config(state="normal")
         self.btn_driverlogs.config(state="normal")
+        self.btn_bulk.config(state="normal")
         self._render()
 
     def _render(self):
@@ -894,6 +907,28 @@ class App:
             self.t("dl_title"),
             self.t("dl_body", n=len(gen["created"]), root=root,
                    skipped=len(gen["skipped"]), errors=len(gen["errors"])))
+
+    # ---------------- BULK UPLOAD ----------------
+    def generate_bulk(self):
+        if not self.result:
+            return
+        root = self.daysroot_var.get().strip() or self.folder_var.get().strip()
+        if not root or not Path(root).is_dir():
+            messagebox.showerror(self.t("err_title"), self.t("err_daysroot"))
+            return
+        from .bulk import generate_bulks, report_lines
+        try:
+            gen = generate_bulks(self.result["claim"]["rows"], root)
+        except Exception as e:                          # pragma: no cover
+            messagebox.showerror(self.t("st_error"), f"{type(e).__name__}: {e}")
+            return
+        self.result["bulk"] = gen
+        self.txt.insert("end", "\n\n" + report_lines(gen, self.lang) + "\n")
+        self.txt.see("end")
+        messagebox.showinfo(
+            self.t("bulk_title"),
+            self.t("bulk_body", n=len(gen["created"]), root=root,
+                   excluded=len(gen.get("excluded", [])), errors=len(gen.get("errors", []))))
 
 
 def main():

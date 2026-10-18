@@ -18,7 +18,7 @@ Facturacion MTM/
 ├── selftest.py             # test contra los claims terminados de septiembre
 ├── Facturacion MTM.spec    # receta de PyInstaller
 ├── version_info.txt        # versión/empresa que se embebe en el .exe
-├── assets/                 # icon.ico / icon.png (el .ico se genera con recon/make_icon.py)
+├── assets/                 # icon.png / icon.ico (marca de MTM) — el .ico se genera con recon/make_icon.py
 │
 ├── app/                    # el motor (Python)
 │   ├── common.py           #   normalización de nombres / números / fechas / horas
@@ -28,6 +28,7 @@ Facturacion MTM/
 │   ├── report.py           #   reporte en pantalla + CSV
 │   ├── writer.py           #   salida EXACTA (una hoja por día, 10 columnas, ordenado por driver)
 │   ├── driverlogs.py       #   llena los driverlogs .docx por driver/día (python-docx)
+│   ├── bulk.py             #   genera el BULK UPLOAD .xlsx por día (plantilla bundleada)
 │   └── ui.py               #   interfaz Tkinter
 │
 ├── data/
@@ -80,6 +81,8 @@ cualquier chat futuro tenga acceso.
    Trip Number, Member Info, PU Time, DropOff Time, Milage, Cost`).
 10. **Generar driverlogs (.docx)** → escribe un driverlog por driver y día en
     **`<día>\Docs\<día> <NUM>.docx`** (ej. `10-05 200.docx`). **No toca las plantillas**.
+11. **Generar BULK UPLOAD** → escribe **`<día>\BULK UPLOAD MM-DD-YYYY.xlsx`** (uno por día) listo para subir al
+    portal, con el mismo formato de la plantilla. Ver `docs/NOTES.md` §17.
 
 > **Idioma y tema:** arriba a la derecha hay dos botones — uno de **idioma** (bandera 🇻🇪/🇺🇸, español por defecto)
 > y uno de **tema** (sol/luna, **modo oscuro por defecto**). Un clic en cada uno y listo.
@@ -98,6 +101,7 @@ python run_app.py --cli "<claim.xlsx>" "data\base" --out "output\salida.xlsx"
 python run_app.py --cli "<claim.xlsx>" "data\base" --driverlogs "<carpeta MTM Driverlogs>"
 python run_app.py --cli "<claim.xlsx>" "data\base" --no-suggest   # dejar drivers en blanco
 python run_app.py --cli "<claim.xlsx>" "data\base" --keep-order   # respetar el orden del claim
+python run_app.py --cli "<claim.xlsx>" "data\base" --gen-bulk --days-root "…\1. PARA FACTURAR"
 python selftest.py                # mide precisión contra septiembre
 ```
 
@@ -110,7 +114,8 @@ python selftest.py                # mide precisión contra septiembre
   Botón "Generar driverlogs (.docx)" en la app; ver `docs/NOTES.md` §15.
 - **v2.1 (HECHO)**: regla de **condado** (Volusia/Marion), Dalia prefiere un driver libre ese día, aviso si faltan
   trip files (Proceed/Cancel), chequeo de **tiempos A/B** (B no puede empezar antes que A) y apertura maximizada.
-- El **BULK UPLOAD no es parte de esta app**: el usuario lo llena a mano después.
+- **v3 (HECHO)**: **BULK UPLOAD** por día — `<día>\BULK UPLOAD MM-DD-YYYY.xlsx` con el formato exacto de la plantilla
+  (usado por el portal). Botón "Generar BULK UPLOAD" / CLI `--gen-bulk`. Ver `docs/NOTES.md` §17.
 
 ## Portabilidad
 

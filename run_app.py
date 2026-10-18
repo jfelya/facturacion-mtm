@@ -3,6 +3,8 @@
 GUI:  python run_app.py
 CLI:  python run_app.py --cli <claim.xlsx> <carpeta_fuentes> [--drivers x.xlsx]
                                           [--out salida.xlsx] [--strategy first_row_A|first_row_B]
+                                          [--gen-driverlogs --driverlogs <plantillas> --days-root <raiz>]
+                                          [--gen-bulk]
 """
 import os
 # must be set BEFORE anything imports numpy/openpyxl (low-RAM machines crash in OpenBLAS)
@@ -31,6 +33,7 @@ def main_cli(args):
     spread = True
     keep_order = False
     gen_dl = False
+    gen_bulk = False
     ratio, buffer = 1.4, 14
     rest = args[2:]
     i = 0
@@ -43,6 +46,8 @@ def main_cli(args):
             days_root = rest[i + 1]; i += 2
         elif rest[i] == "--gen-driverlogs":
             gen_dl = True; i += 1
+        elif rest[i] == "--gen-bulk":
+            gen_bulk = True; i += 1
         elif rest[i] == "--out" and i + 1 < len(rest):
             out = rest[i + 1]; i += 2
         elif rest[i] == "--strategy" and i + 1 < len(rest):
@@ -77,6 +82,10 @@ def main_cli(args):
             return 2
         gen = generate_driverlogs(res["claim"]["rows"], driverlogs, days_root or folder)
         p("\n" + report_lines(gen))
+    if gen_bulk:
+        from app.bulk import generate_bulks, report_lines as bulk_lines
+        gen = generate_bulks(res["claim"]["rows"], days_root or folder)
+        p("\n" + bulk_lines(gen))
     return 0
 
 

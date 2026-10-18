@@ -5,7 +5,7 @@ a = Analysis(
     ['run_app.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets/icon.png', 'assets')],
+    datas=[('assets/icon.png', 'assets'), ('app/assets/bulk_template.xlsx', 'app/assets')],
     hiddenimports=['docx'],
     hookspath=[],
     hooksconfig={},
