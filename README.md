@@ -128,9 +128,9 @@ El `.exe` de la **raíz** es **standalone / one-file y 32-bit (x86)**: cópialo 
 driverlogs OK, salidas idénticas al motor).
 
 **Firma / "Unknown publisher":** el exe está firmado con un certificado propio de **Disma Transportation**. En cada PC,
-la primera vez, ejecuta **`assets\codesign\Instalar certificado Disma.cmd`** (una vez por usuario, sin admin; Windows
-pide confirmar → Sí). Después el editor sale como *Disma Transportation* y no aparece "Unknown publisher". Ver
-`assets\codesign\LEEME - Certificado.txt`.
+la primera vez, ejecuta **`Instalar certificado.cmd`** (que está junto al `.exe`, junto con `Disma-CodeSign.cer`; una vez
+por usuario, sin admin; Windows pide confirmar → Sí, el script reintenta hasta lograrlo). Después el editor sale como
+*Disma Transportation* y no aparece "Unknown publisher". Ver `LEEME - certificado Disma.txt`.
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
 (las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.

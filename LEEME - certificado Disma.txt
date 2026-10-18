@@ -1,0 +1,25 @@
+CERTIFICADO DE FIRMA - DISMA TRANSPORTATION
+===========================================
+
+Para que Windows muestre "Disma Transportation" en vez de
+"Unknown publisher", haz esto UNA vez en cada PC:
+
+  1) Doble clic en:  Instalar certificado.cmd
+  2) Windows mostrara un aviso de seguridad  ->  pulsa  SI / YES
+  3) Cuando diga "LISTO", cierra la ventana.
+  4) Abre  "Facturacion MTM.exe".
+
+Archivos necesarios (deben quedar juntos, en esta misma carpeta):
+  - Facturacion MTM.exe
+  - Disma-CodeSign.cer
+  - Instalar certificado.cmd
+
+Para quitarlo:  Desinstalar certificado.cmd
+
+Notas:
+  - Es por USUARIO. No hace falta ser administrador.
+  - Si Windows NO muestra el aviso al instalar, vuelve a ejecutar el
+    Instalar certificado.cmd (el script lo reintenta hasta lograrlo).
+  - SmartScreen (la pantalla azul "Windows protegio tu PC") se basa en
+    reputacion; puede seguir saliendo en un PC nuevo aunque el
+    certificado este instalado.
