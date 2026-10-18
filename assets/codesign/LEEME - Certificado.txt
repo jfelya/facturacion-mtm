@@ -28,7 +28,7 @@ RE-FIRMAR DESPUES DE UN BUILD (desarrollador)
     no se sube al repo).
   - Importarlo a Cert:\CurrentUser\My (doble clic en el .pfx > Actual usuario).
   - Ejecutar:  powershell -ExecutionPolicy Bypass -File sign_exe.ps1
-  - Thumbprint: A8E8C2FAB0CA8D237D7CE54BE6888EE6143DC3B4
+  - Thumbprint: 76E57421C80055FF256CD4BE880B9377D5D9608F
 
 LIMITES (importante, sin humo)
   - Esto elimina el aviso de "editor desconocido" en los PC donde se instala

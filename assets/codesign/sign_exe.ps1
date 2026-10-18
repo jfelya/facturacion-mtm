@@ -9,7 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$thumb = "A8E8C2FAB0CA8D237D7CE54BE6888EE6143DC3B4"
+$thumb = "76E57421C80055FF256CD4BE880B9377D5D9608F"
 
 $cert = Get-ChildItem Cert:\CurrentUser\My | Where-Object { $_.Thumbprint -eq $thumb }
 if (-not $cert) {

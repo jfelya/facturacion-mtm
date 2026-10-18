@@ -1,6 +1,6 @@
 @echo off
 setlocal
-set "TP=A8E8C2FAB0CA8D237D7CE54BE6888EE6143DC3B4"
+set "TP=76E57421C80055FF256CD4BE880B9377D5D9608F"
 echo Quitando el certificado de Disma Transportation de este usuario...
 certutil -delstore -user Root %TP%
 certutil -delstore -user TrustedPublisher %TP%
