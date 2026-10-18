@@ -8,20 +8,29 @@ Sheet `Export Trip`, 10 columns (exact template order):
 
 Meanings (per the user's `BULK UPLOAD Training.xlsx`):
 
-    Driver            = the driver's **License**  (claim "License")
-    Vehicle           = the vehicle **VIN**        (claim "VIN")
-    ScheduledPickupTime  = planned pickup          (claim "PU Time")
-    ScheduledDropoffTime = scheduled appointment   (claim "DropOff Time")
-    TripLogSignature  = "Y" (always)
+    Driver               = the driver's **License**  (claim "License")
+    Vehicle              = the vehicle **VIN**        (claim "VIN")
+    ScheduledPickupTime  = planned pickup             (claim "PU Time")
+    ScheduledDropoffTime = the **trip file's `Time`** (= the appointment, 15-min
+                           marks). For a **Will Call** (no appointment) it is the
+                           computed return dropoff (claim `DropOff Time`).
+    TripLogSignature     = "Y" (always)
 
 The four **Reported** columns do NOT exist in the ClaimInformation, so they are
 **simulated** with a deterministic jitter (same trip -> same times on every run,
 so the output is idempotent), matching the archived examples:
 
-    ReportedPickupArriveTime   = PU   - 0..6 min   (driver shows up a bit early)
-    ReportedPickupPerformTime  = arrive + 1 min    (patient gets in)
-    ReportedDropoffArriveTime  = drop - 1..13 min  (driver arrives at the appointment)
-    ReportedDropoffPerformTime = arrive (same)     (patient gets out)
+    ReportedPickupArriveTime   = PU  - 1..5 min   (A leg) / PU - 1..3 min (B leg)
+    ReportedPickupPerformTime  = arrive + 1 min   (patient gets in)
+    ReportedDropoffArriveTime  = SchedDrop - 1..13 min
+    ReportedDropoffPerformTime = arrive (same)    (patient gets out)
+
+Extra safety rules (user, 18-oct):
+
+* A **B leg** (return) never arrives for its pickup before the matching **A leg**
+  has dropped the member off — otherwise a back-to-back rider would "teleport".
+* The drop-off can never happen before the pick-up on the same trip.
+* B legs only arrive 1..3 min early (not more) precisely to avoid that clash.
 
 Output goes to `<days_root>\\<MM-DD>\\BULK UPLOAD <MM-DD-YYYY>.xlsx`, formatted
 from the bundled template (`app/assets/bulk_template.xlsx`) so the layout stays
@@ -100,21 +109,51 @@ def _mins(t):
     return t.hour * 60 + t.minute
 
 
-# --------------------------------------------------------------------------- simulation
-def sim_times(row):
-    """Deterministic simulated (arrive_pu, perform_pu, arrive_drop, perform_drop).
+def scheduled_dropoff(row):
+    """Scheduled drop-off for the BULK.
 
-    Each value is a `time` or None when the corresponding scheduled time is missing.
+    * Normal trip: the trip file's `Time` (the appointment) -> `pu_appt`
+      (a 15-minute mark; it is also what the pickup time is derived from).
+    * Will Call: the trip file has `Time = "Will Call"`, so the app derives
+      `A + 2h`. That is the **return pickup**, not an appointment -> use the
+      computed return dropoff (the claim's `DropOff Time`) instead, so the
+      trip stays physically consistent.
+
+    Detection: for a Will Call `pu_appt` sits only 1..3 min after `pu`; for a
+    normal trip it is `pu + (lead + margin)` (>= ~12 min).
     """
-    pu = _as_time(row.get("pu"))
+    appt = _as_time(row.get("pu_appt"))
     drop = _as_time(row.get("dropoff"))
+    pu = _as_time(row.get("pu"))
+    if appt and drop and pu:
+        gap = _mins(appt) - _mins(pu)
+        if 0 <= gap <= 5:                 # Will Call: A+2h is the return pickup
+            return drop
+    return appt or drop
+
+
+def _leg(row):
+    leg = (row.get("leg") or "").upper()
+    if leg in ("A", "B"):
+        return leg
+    trip = str(row.get("trip") or "").upper()
+    return trip[-1] if trip[-1:] in ("A", "B") else ""
+
+
+# --------------------------------------------------------------------------- simulation
+def _base_sim(row):
+    """Base simulated (arrive_pu, perform_pu, arrive_drop, perform_drop) for one trip."""
+    pu = _as_time(row.get("pu"))
+    drop = scheduled_dropoff(row)
     seed = zlib.crc32(f"{row.get('date', '')}|{row.get('trip', '')}|bulk".encode("utf-8"))
     rng = random.Random(seed)
+    # B legs (returns) arrive only 1..3 min early so they never undercut the A leg.
+    lo, hi = (1, 3) if _leg(row) == "B" else (1, 5)
 
     arrive_pu = perform_pu = arrive_drop = perform_drop = None
     if pu:
         pu = pu.replace(second=0, microsecond=0)
-        arrive_pu = _add(pu, -rng.randint(0, 6))
+        arrive_pu = _add(pu, -rng.randint(lo, hi))
         perform_pu = _add(arrive_pu, 1)
     if drop:
         drop = drop.replace(second=0, microsecond=0)
@@ -124,23 +163,56 @@ def sim_times(row):
     if perform_pu and arrive_drop and _mins(arrive_drop) <= _mins(perform_pu):
         arrive_drop = _add(perform_pu, rng.randint(4, 12))
         perform_drop = arrive_drop
-    return arrive_pu, perform_pu, arrive_drop, perform_drop
+    return [arrive_pu, perform_pu, arrive_drop, perform_drop]
 
 
-def row_values(row):
+def sim_times(row):
+    """Single-trip simulated times (no A/B context). Tuple for convenience."""
+    return tuple(_base_sim(row))
+
+
+def day_sims(rows):
+    """Simulate a whole day, keeping B legs from arriving before their A leg drops off.
+
+    Returns a list aligned with `rows`; each item is [arrive_pu, perform_pu, arrive_drop, perform_drop].
+    """
+    sims = [_base_sim(r) for r in rows]
+    a_by_key = {}
+    for i, r in enumerate(rows):
+        trip = str(r.get("trip") or "").upper()
+        if trip.endswith("A"):
+            a_by_key[(r.get("date"), trip[:-1])] = sims[i]
+    for i, r in enumerate(rows):
+        trip = str(r.get("trip") or "").upper()
+        if not trip.endswith("B"):
+            continue
+        a = a_by_key.get((r.get("date"), trip[:-1]))
+        if not a:
+            continue
+        a_out = a[3] or a[2]                      # A leg: member got out
+        if a_out and sims[i][0] and _mins(sims[i][0]) < _mins(a_out):
+            sims[i][0] = a_out                    # B driver only arrives after dropping off
+            sims[i][1] = _add(a_out, 1)
+            if sims[i][3] and _mins(sims[i][3]) < _mins(sims[i][1]):
+                sims[i][3] = _add(sims[i][1], 4)
+                sims[i][2] = sims[i][3]
+    return sims
+
+
+def row_values(row, sim=None):
     """The 10 cell values for one claim row (A..J)."""
-    a_pu, p_pu, a_dr, p_dr = sim_times(row)
+    a_pu, p_pu, a_dr, p_dr = sim if sim else _base_sim(row)
     return [
-        row.get("trip") or "",          # A TripNumber
-        row.get("license") or "",       # B Driver (= License)
-        row.get("vin") or "",           # C Vehicle (= VIN)
-        _as_time(row.get("pu")),        # D ScheduledPickupTime
-        a_pu,                           # E ReportedPickupArriveTime
-        p_pu,                           # F ReportedPickupPerformTime
-        _as_time(row.get("dropoff")),   # G ScheduledDropoffTime
-        a_dr,                           # H ReportedDropoffArriveTime
-        p_dr,                           # I ReportedDropoffPerformTime
-        SIGNATURE,                      # J TripLogSignature
+        row.get("trip") or "",              # A TripNumber
+        row.get("license") or "",           # B Driver (= License)
+        row.get("vin") or "",               # C Vehicle (= VIN)
+        _as_time(row.get("pu")),            # D ScheduledPickupTime
+        a_pu,                               # E ReportedPickupArriveTime
+        p_pu,                               # F ReportedPickupPerformTime
+        scheduled_dropoff(row),             # G ScheduledDropoffTime (trip-file Time)
+        a_dr,                               # H ReportedDropoffArriveTime
+        p_dr,                               # I ReportedDropoffPerformTime
+        SIGNATURE,                          # J TripLogSignature
     ]
 
 
@@ -169,10 +241,11 @@ def fill_workbook(rows, template=None):
         for c in range(1, len(HEADERS) + 1):
             ws.cell(r, c).value = None
 
-    # write the rows
+    # write the rows (with the A->B clash handling)
+    sims = day_sims(rows)
     for i, row in enumerate(rows):
         r = FIRST_DATA_ROW + i
-        for c, val in enumerate(row_values(row), start=1):
+        for c, val in enumerate(row_values(row, sims[i]), start=1):
             ws.cell(r, c).value = val
 
     # delete the leftover blank formatted rows ("borrar espacios en blanco")

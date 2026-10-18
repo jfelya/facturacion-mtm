@@ -47,7 +47,8 @@ Facturacion MTM/
 │
 ├── output/                 # archivos generados (ClaimInformation relleno + reportes)
 ├── recon/                  # scripts de análisis usados para descifrar formatos (referencia)
-├── dist/                   # copia de build del .exe (el que se usa está en la raíz)
+├── dist/                   # build 64-bit del .exe (la que se usa está en la raíz)
+├── dist32/                 # build 32-bit (universal; es la que está en la raíz)
 └── build/                  # artefactos temporales de PyInstaller (se borra)
 ```
 
@@ -119,9 +120,11 @@ python selftest.py                # mide precisión contra septiembre
 
 ## Portabilidad
 
-El `.exe` es **standalone / one-file**: cópialo a cualquier PC con **Windows 10 (64-bit) o superior** y funciona sin
-instalar Python ni dependencias. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal:
-Excel + driverlogs OK). Windows puede mostrar *"Unknown publisher"* (SmartScreen) la primera vez → **More info → Run anyway**.
+El `.exe` de la **raíz** es **standalone / one-file y 32-bit (x86)**: cópialo a cualquier PC con **Windows 10/11 de
+32 o 64 bits** y funciona sin instalar Python ni dependencias. En `dist\` queda la build **64-bit** y en `dist32\` la
+32-bit. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal: Excel + BULK UPLOAD +
+driverlogs OK, salidas idénticas al motor). Windows puede mostrar *"Unknown publisher"* (SmartScreen) la primera vez →
+**More info → Run anyway**.
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
 (las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.

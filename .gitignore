@@ -7,7 +7,9 @@ selftest.py
 # ---- Generated output & build artifacts ----
 output/
 build/
+build32/
 dist/
+dist32/
 *.exe
 
 # ---- Python ----
