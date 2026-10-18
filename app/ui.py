@@ -57,6 +57,8 @@ STRINGS = {
         "hint_drivers": "Solo si no está dentro de la carpeta de fuentes (se busca solo si lo dejas vacío).",
         "lbl_driverlogs": "Paso 4 · Driverlogs (plantillas .docx)",
         "hint_driverlogs": "Carpeta con «<NUM> <NOMBRE> DRIVERLOG VACIO.docx». Los drivers sin plantilla se reemplazan por uno libre.",
+        "lbl_daysroot": "Paso 5 · Carpeta de días (salida .docx)",
+        "hint_daysroot": "Dónde están las carpetas 10-05, 10-06… (ej. «1. PARA FACTURAR»). Vacío → usa la carpeta de fuentes.",
         "browse": "Elegir…",
         "sec_options": "Opciones",
         "lbl_pairs": "Driver patas A/B:",
@@ -70,6 +72,7 @@ STRINGS = {
         "btn_run": "Procesar",
         "btn_export": "Exportar Excel…",
         "btn_csv": "Guardar reporte (CSV)…",
+        "btn_driverlogs": "Generar driverlogs (.docx)",
         "btn_help": "¿Qué archivos necesito?",
         "tab_preview": "Vista previa",
         "tab_report": "Reporte",
@@ -91,6 +94,10 @@ STRINGS = {
                     "{elegir} por asignar, {nofact} sin facturar, {revisar} por revisar, {sindato} sin datos."),
         "err_claim": "Elige el archivo ClaimInformation (.xlsx).",
         "err_folder": "Elige la carpeta donde están los resúmenes / viajes / drivers.",
+        "err_driverlogs": "Elige la carpeta de plantillas de driverlogs (.docx).",
+        "err_daysroot": "Elige la carpeta de días (donde están 10-05, 10-06…).",
+        "dl_title": "Driverlogs generados",
+        "dl_body": "Se generaron {n} driverlog(s) en:\n{root}\n\nSin plantilla (omitidos): {skipped}\nErrores: {errors}",
         "err_title": "Falta",
         "prev_summary": "RESUMEN VISTA PREVIA",
         "exp_title": "Guardado",
@@ -132,6 +139,8 @@ STRINGS = {
         "hint_drivers": "Only if it is not inside the sources folder (it's auto-found when left empty).",
         "lbl_driverlogs": "Step 4 · Driverlogs (.docx templates)",
         "hint_driverlogs": "Folder with «<NUM> <NAME> DRIVERLOG VACIO.docx». Drivers without a template get replaced.",
+        "lbl_daysroot": "Step 5 · Days folder (.docx output)",
+        "hint_daysroot": "Where the 10-05, 10-06… folders live (e.g. «1. PARA FACTURAR»). Empty → uses the sources folder.",
         "browse": "Browse…",
         "sec_options": "Options",
         "lbl_pairs": "A/B legs driver:",
@@ -145,6 +154,7 @@ STRINGS = {
         "btn_run": "Process",
         "btn_export": "Export Excel…",
         "btn_csv": "Save report (CSV)…",
+        "btn_driverlogs": "Generate driverlogs (.docx)",
         "btn_help": "What files do I need?",
         "tab_preview": "Preview",
         "tab_report": "Report",
@@ -166,6 +176,10 @@ STRINGS = {
                     "{elegir} to assign, {nofact} not billed, {revisar} to review, {sindato} no data."),
         "err_claim": "Pick the ClaimInformation file (.xlsx).",
         "err_folder": "Pick the folder with the resúmenes / trips / drivers.",
+        "err_driverlogs": "Pick the driverlogs templates folder (.docx).",
+        "err_daysroot": "Pick the days folder (where 10-05, 10-06… live).",
+        "dl_title": "Driverlogs generated",
+        "dl_body": "Generated {n} driverlog(s) in:\n{root}\n\nNo template (skipped): {skipped}\nErrors: {errors}",
         "err_title": "Missing",
         "prev_summary": "PREVIEW SUMMARY",
         "exp_title": "Saved",
@@ -299,6 +313,7 @@ class App:
         self.folder_var = tk.StringVar()
         self.drivers_var = tk.StringVar()
         self.driverlogs_var = tk.StringVar()
+        self.daysroot_var = tk.StringVar()
         self.strategy_var = tk.StringVar(value="pair")
         self.willcall_var = tk.StringVar(value="2")
         self.suggest_var = tk.BooleanVar(value=True)
@@ -342,6 +357,8 @@ class App:
         self.lbl_drivers = self._file_row(card, "drivers", self.drivers_var, self.browse_drivers)
         self.lbl_driverlogs = self._file_row(card, "driverlogs", self.driverlogs_var,
                                              self.browse_driverlogs)
+        self.lbl_daysroot = self._file_row(card, "daysroot", self.daysroot_var,
+                                           self.browse_daysroot)
 
         opt = ttk.Frame(body, padding=(4, 12, 4, 6))
         opt.pack(fill="x")
@@ -377,6 +394,8 @@ class App:
         self.btn_export.pack(side="left", padx=6)
         self.btn_csv = ttk.Button(act, command=self.save_csv, state="disabled")
         self.btn_csv.pack(side="left")
+        self.btn_driverlogs = ttk.Button(act, command=self.generate_driverlogs, state="disabled")
+        self.btn_driverlogs.pack(side="left", padx=6)
 
         nb = ttk.Notebook(self.root)
         nb.pack(fill="both", expand=True, padx=14, pady=(0, 6))
@@ -547,7 +566,8 @@ class App:
         self.lbl_sub.config(text=self.t("subtitle"))
         self.lbl_sources.config(text=self.t("sec_sources"))
         for row, key in ((self.lbl_claim, "claim"), (self.lbl_folder, "folder"),
-                         (self.lbl_drivers, "drivers"), (self.lbl_driverlogs, "driverlogs")):
+                         (self.lbl_drivers, "drivers"), (self.lbl_driverlogs, "driverlogs"),
+                         (self.lbl_daysroot, "daysroot")):
             row._lbl.config(text=self.t(f"lbl_{key}"))
             row._hint.config(text=self.t(f"hint_{key}"))
             row._btn.config(text=self.t("browse"))
@@ -562,6 +582,7 @@ class App:
         self.btn_run.config(text=self.t("btn_run"))
         self.btn_export.config(text=self.t("btn_export"))
         self.btn_csv.config(text=self.t("btn_csv"))
+        self.btn_driverlogs.config(text=self.t("btn_driverlogs"))
         self.btn_help.config(text=self.t("btn_help"))
         self.nb.tab(self.tabs[0], text=self.t("tab_preview"))
         self.nb.tab(self.tabs[1], text=self.t("tab_report"))
@@ -590,6 +611,8 @@ class App:
         p = filedialog.askdirectory(title=self.t("lbl_folder"))
         if p:
             self.folder_var.set(p)
+            if not self.daysroot_var.get().strip():
+                self.daysroot_var.set(p)
 
     def browse_drivers(self):
         p = filedialog.askopenfilename(title="Informacion de Drivers.xlsx",
@@ -601,6 +624,11 @@ class App:
         p = filedialog.askdirectory(title=self.t("lbl_driverlogs"))
         if p:
             self.driverlogs_var.set(p)
+
+    def browse_daysroot(self):
+        p = filedialog.askdirectory(title=self.t("lbl_daysroot"))
+        if p:
+            self.daysroot_var.set(p)
 
     def show_help(self):
         messagebox.showinfo(self.t("help_title"), self.t("help_body"))
@@ -623,6 +651,7 @@ class App:
         self.btn_run.config(state="disabled")
         self.btn_export.config(state="disabled")
         self.btn_csv.config(state="disabled")
+        self.btn_driverlogs.config(state="disabled")
         self.status.config(text=self.t("st_working"), foreground=THEMES[self.theme]["muted"])
         self.txt.delete("1.0", "end")
         args = (claim, folder, drivers, self.driverlogs_var.get().strip() or None,
@@ -647,6 +676,7 @@ class App:
         self.result = res
         self.btn_export.config(state="normal")
         self.btn_csv.config(state="normal")
+        self.btn_driverlogs.config(state="normal")
         self._render()
 
     def _render(self):
@@ -807,6 +837,32 @@ class App:
             return
         write_report_csv(path, self.result)
         messagebox.showinfo(self.t("csv_title"), self.t("csv_body", path=path))
+
+    # ---------------- driverlogs ----------------
+    def generate_driverlogs(self):
+        if not self.result:
+            return
+        templates = self.driverlogs_var.get().strip()
+        if not templates or not Path(templates).is_dir():
+            messagebox.showerror(self.t("err_title"), self.t("err_driverlogs"))
+            return
+        root = self.daysroot_var.get().strip() or self.folder_var.get().strip()
+        if not root or not Path(root).is_dir():
+            messagebox.showerror(self.t("err_title"), self.t("err_daysroot"))
+            return
+        from .driverlogs import generate_driverlogs, report_lines
+        try:
+            gen = generate_driverlogs(self.result["claim"]["rows"], templates, root)
+        except Exception as e:                          # pragma: no cover
+            messagebox.showerror(self.t("st_error"), f"{type(e).__name__}: {e}")
+            return
+        self.result["driverlogs"] = gen
+        self.txt.insert("end", "\n\n" + report_lines(gen, self.lang) + "\n")
+        self.txt.see("end")
+        messagebox.showinfo(
+            self.t("dl_title"),
+            self.t("dl_body", n=len(gen["created"]), root=root,
+                   skipped=len(gen["skipped"]), errors=len(gen["errors"])))
 
 
 def main():

@@ -25,11 +25,12 @@ def main_cli(args):
             pass  # windowed exe has no stdout
 
     claim, folder = args[0], args[1]
-    drivers = out = driverlogs = None
+    drivers = out = driverlogs = days_root = None
     strategy = "pair"
     suggest = True
     spread = True
     keep_order = False
+    gen_dl = False
     ratio, buffer = 1.4, 14
     rest = args[2:]
     i = 0
@@ -38,6 +39,10 @@ def main_cli(args):
             drivers = rest[i + 1]; i += 2
         elif rest[i] == "--driverlogs" and i + 1 < len(rest):
             driverlogs = rest[i + 1]; i += 2
+        elif rest[i] == "--days-root" and i + 1 < len(rest):
+            days_root = rest[i + 1]; i += 2
+        elif rest[i] == "--gen-driverlogs":
+            gen_dl = True; i += 1
         elif rest[i] == "--out" and i + 1 < len(rest):
             out = rest[i + 1]; i += 2
         elif rest[i] == "--strategy" and i + 1 < len(rest):
@@ -65,6 +70,13 @@ def main_cli(args):
     if out:
         info = write_output(res["claim"], out)
         p(f"\nGuardado: {out} ({info['rows']} filas)")
+    if gen_dl:
+        from app.driverlogs import generate_driverlogs, report_lines
+        if not driverlogs:
+            p("ERROR: --gen-driverlogs necesita --driverlogs <carpeta de plantillas>")
+            return 2
+        gen = generate_driverlogs(res["claim"]["rows"], driverlogs, days_root or folder)
+        p("\n" + report_lines(gen))
     return 0
 
 
