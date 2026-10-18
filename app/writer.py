@@ -8,8 +8,8 @@ from datetime import datetime, time as dtime
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
-HEADERS = ["Driver", "License", "VIN", "Trip Number", "Appt. Date",
-           "Member Info", "PU Time", "DropOff Time", "Milage", "Cost"]
+HEADERS = ["Driver", "License", "VIN", "Appt. Date", "Trip Number", "Member Info",
+           "PU Time", "DropOff Time", "Milage", "Cost"]
 
 WIDTHS = (9, 22, 20, 15, 12, 26, 9, 12, 9, 10)
 
@@ -47,8 +47,8 @@ def _write_sheet(ws, rows):
             drv,
             row.get("license") or "",
             row.get("vin") or "",
-            row.get("trip") or "",
-            row.get("date_text") or "",
+            row.get("date_text") or "",     # Appt. Date
+            row.get("trip") or "",           # Trip Number
             member,
             pu,
             do,

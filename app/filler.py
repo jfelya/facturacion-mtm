@@ -93,13 +93,14 @@ def _assign(row, x, drivers, warnings, review, stats):
         stats["note_overrides"] += 1
 
     # approval check
-    # approval check: a number NOT in Informacion de Drivers is not billable -> it is
-    # replaced later by a free driver of that day (see the "suggested driver" pass below)
-    if driver and drivers and driver not in drivers["table"]:
+    # approval check: a number that is NOT in the drivers list (or has no driverlog template)
+    # is not billable -> it gets replaced by a free driver of that day (suggestion pass below)
+    allowed = (drivers.get("allowed") if drivers else None) or (set(drivers["table"]) if drivers else set())
+    if driver and drivers and driver not in allowed:
         driver = ""
         row["flag"] = "revisar"
-        warnings.append(f"{row['date']} {row['member']} {row['trip']}: driver {number} NO está aprobado en "
-                        f"Informacion de Drivers -> se reemplaza por un driver libre de ese día (revisar)")
+        warnings.append(f"{row['date']} {row['member']} {row['trip']}: driver {number} no está aprobado/sin "
+                        f"driverlog -> se reemplaza por un driver libre de ese día (revisar)")
         stats["flagged_unapproved"] += 1
 
     if driver:
@@ -320,8 +321,8 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
     not_billed = []
     needs = [r for r in claim["rows"] if not r.get("driver")]
     if needs and drivers:
-        approved = [n for n in sorted(drivers["table"].keys(), key=_drv_sort)
-                    if n not in PLACEHOLDER_DRIVERS]
+        allowed = drivers.get("allowed") or set(drivers["table"])
+        approved = [n for n in sorted(allowed, key=_drv_sort) if n not in PLACEHOLDER_DRIVERS]
         for d in sorted({r["date"] for r in needs}):
             counts = ((driver_usage or {}).get(d) or {}).get("count", {})
             ranked = sorted(approved, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
@@ -345,7 +346,8 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
         best = cands[0] if cands else None
         # prefer the member's usual driver (e.g. Dalia -> 349) when it's approved
         pref = PREFERRED_DRIVER.get((r.get("member") or "").upper())
-        if pref and drivers and pref in drivers["table"]:
+        allowed = drivers.get("allowed") or set(drivers["table"]) if drivers else set()
+        if pref and drivers and pref in allowed:
             counts = ((driver_usage or {}).get(r["date"]) or {}).get("count", {})
             best = {"num": pref, "name": drivers["table"][pref]["name"],
                     "count": counts.get(pref, 0), "free": counts.get(pref, 0) == 0}

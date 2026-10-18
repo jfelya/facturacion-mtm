@@ -23,6 +23,28 @@ def _iter_xlsx(folder):
         yield f
 
 
+def scan_driverlogs(folder):
+    """Set of driver numbers that HAVE a driverlog template in `folder`.
+
+    Template names look like `200 JORGE NINO DRIVERLOG VACIO.docx` (leading number).
+    Files without a leading number (e.g. `MARINES PENA ...`) are ignored.
+    """
+    nums = set()
+    if not folder:
+        return nums
+    for f in Path(folder).glob("*.docx"):
+        if f.name.startswith("~$"):
+            continue
+        m = re.match(r"\s*(\d+)\b", f.stem)
+        if m:
+            nums.add(m.group(1))
+    return nums
+
+
+def _numsort(n):
+    return (0, int(n)) if str(n).isdigit() else (1, str(n))
+
+
 def scan_sources(folder, drivers_path=None):
     """Classify every xlsx under `folder` (up to 3 levels). Never fails on bad files."""
     folder = Path(folder)
@@ -148,7 +170,7 @@ def build_trips(files, claim, warnings):
 
 def run_job(claim_path, sources_folder, drivers_path=None, strategy="pair",
             willcall_hours=2.0, suggest_driver=True, sort_by_date=True, spread=True,
-            pickup_ratio=1.4, pickup_buffer=14, pickup_jitter=3):
+            pickup_ratio=1.4, pickup_buffer=14, pickup_jitter=3, driverlogs_folder=None):
     """Full pipeline. Returns {'claim', 'report', 'sources', 'claim_path'} or {'error'}."""
     claim_path = Path(claim_path)
     try:
@@ -172,6 +194,19 @@ def run_job(claim_path, sources_folder, drivers_path=None, strategy="pair",
             warnings.append(f"No pude leer drivers ({Path(src['drivers_file']).name}): {type(e).__name__}")
     if not drivers:
         warnings.append("NO se encontró Informacion de Drivers.xlsx -> License/VIN quedarán en blanco")
+    else:
+        # a driver must be in the list AND (if a driverlogs folder was given) have a template
+        allowed = set(drivers["table"])
+        if driverlogs_folder:
+            tpl = scan_driverlogs(driverlogs_folder)
+            if tpl:
+                missing = sorted(allowed - tpl, key=_numsort)
+                if missing:
+                    warnings.append("Drivers en la lista pero SIN plantilla de driverlog "
+                                    "(se reemplazarán por uno libre que sí tenga): "
+                                    + ", ".join(missing))
+                allowed &= tpl
+        drivers["allowed"] = allowed
 
     report = fill_claim(
         claim, resumen_index, trips_by_date, drivers,

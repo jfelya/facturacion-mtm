@@ -25,7 +25,7 @@ def main_cli(args):
             pass  # windowed exe has no stdout
 
     claim, folder = args[0], args[1]
-    drivers = out = None
+    drivers = out = driverlogs = None
     strategy = "pair"
     suggest = True
     spread = True
@@ -36,6 +36,8 @@ def main_cli(args):
     while i < len(rest):
         if rest[i] == "--drivers" and i + 1 < len(rest):
             drivers = rest[i + 1]; i += 2
+        elif rest[i] == "--driverlogs" and i + 1 < len(rest):
+            driverlogs = rest[i + 1]; i += 2
         elif rest[i] == "--out" and i + 1 < len(rest):
             out = rest[i + 1]; i += 2
         elif rest[i] == "--strategy" and i + 1 < len(rest):
@@ -55,7 +57,7 @@ def main_cli(args):
 
     res = run_job(claim, folder, drivers_path=drivers, strategy=strategy,
                   suggest_driver=suggest, sort_by_date=not keep_order, spread=spread,
-                  pickup_ratio=ratio, pickup_buffer=buffer)
+                  pickup_ratio=ratio, pickup_buffer=buffer, driverlogs_folder=driverlogs)
     if res.get("error"):
         p("ERROR:", res["error"])
         return 2

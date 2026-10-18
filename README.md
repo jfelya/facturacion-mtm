@@ -59,17 +59,20 @@ cualquier chat futuro tenga acceso.
 1. Doble clic en **`Facturacion MTM.exe`** (en la carpeta del proyecto).
 2. **Claim OLD/NEW (.xlsx):** elige el `ClaimInformation ... OLD.xlsx` de `data/base/`.
 3. **Carpeta de fuentes:** elige `data/base/` (detecta resúmenes, viajes y drivers por estructura, no por nombre).
-4. Pulsa **Procesar**.
-5. Revisa los colores:
+4. **Informacion de Drivers.xlsx** *(opcional)*: solo si no está dentro de la carpeta de fuentes.
+5. **Driverlogs (plantillas .docx)** *(opcional)*: la carpeta con los `<NUM> <NOMBRE> DRIVERLOG VACIO.docx`
+   (ej. `…\Facturacion\MTM Driverlogs`). Si la pones, los drivers **sin plantilla** se reemplazan por uno libre.
+6. Pulsa **Procesar**.
+7. Revisa los colores:
    - 🟢 **OK** — driver + milage listos
    - 🟡 **NOTA** — tiene una anotación tuya (se respetó)
    - 🟣 **SUGERIDO** — el app puso el driver menos ocupado de ese día; confírmalo o cámbialo en *Asignar driver*
    - 🔵 **ELEGIR** — viene del portal pero no hay fila MTM ni forma de sugerir: elige el driver a mano
    - ⬜ **NO FACTURAR** — viene del claim pero no está en el resumen (y no es Dalia): no se factura
    - 🔴 **SIN DATO** — no hay información para ese viaje
-6. **Exportar Excel** → guarda el archivo terminado. La salida tiene **UNA HOJA POR DÍA** (`10-05`, `10-06`, …),
-   cada una con las columnas exactas (`Driver, License, VIN, Trip Number, Appt. Date, Member Info, PU Time,
-   DropOff Time, Milage, Cost`), listas para revisar día por día.
+8. **Exportar Excel** → guarda el archivo terminado. La salida tiene **UNA HOJA POR DÍA** (`10-05`, `10-06`, …),
+   cada una **ordenada por número de driver**, con las columnas exactas (`Driver, License, VIN, Appt. Date,
+   Trip Number, Member Info, PU Time, DropOff Time, Milage, Cost`).
 
 > **Idioma y tema:** arriba a la derecha hay dos botones — uno de **idioma** (bandera 🇻🇪/🇺🇸, español por defecto)
 > y uno de **tema** (sol/luna, **modo oscuro por defecto**). Un clic en cada uno y listo.
@@ -85,6 +88,7 @@ cualquier chat futuro tenga acceso.
 ```
 python run_app.py                 # GUI
 python run_app.py --cli "<claim.xlsx>" "data\base" --out "output\salida.xlsx"
+python run_app.py --cli "<claim.xlsx>" "data\base" --driverlogs "<carpeta MTM Driverlogs>"
 python run_app.py --cli "<claim.xlsx>" "data\base" --no-suggest   # dejar drivers en blanco
 python run_app.py --cli "<claim.xlsx>" "data\base" --keep-order   # respetar el orden del claim
 python selftest.py                # mide precisión contra septiembre

@@ -55,6 +55,8 @@ STRINGS = {
         "hint_folder": "Aquí van los RESUMEN FACTURACION de cada día, los archivos de viajes (10-05.xlsx…) y los drivers.",
         "lbl_drivers": "Paso 3 · Informacion de Drivers.xlsx",
         "hint_drivers": "Solo si no está dentro de la carpeta de fuentes (se busca solo si lo dejas vacío).",
+        "lbl_driverlogs": "Paso 4 · Driverlogs (plantillas .docx)",
+        "hint_driverlogs": "Carpeta con «<NUM> <NOMBRE> DRIVERLOG VACIO.docx». Los drivers sin plantilla se reemplazan por uno libre.",
         "browse": "Elegir…",
         "sec_options": "Opciones",
         "lbl_pairs": "Driver patas A/B:",
@@ -128,6 +130,8 @@ STRINGS = {
         "hint_folder": "Holds each day's RESUMEN FACTURACION, the trip files (10-05.xlsx…) and the drivers.",
         "lbl_drivers": "Step 3 · Informacion de Drivers.xlsx",
         "hint_drivers": "Only if it is not inside the sources folder (it's auto-found when left empty).",
+        "lbl_driverlogs": "Step 4 · Driverlogs (.docx templates)",
+        "hint_driverlogs": "Folder with «<NUM> <NAME> DRIVERLOG VACIO.docx». Drivers without a template get replaced.",
         "browse": "Browse…",
         "sec_options": "Options",
         "lbl_pairs": "A/B legs driver:",
@@ -294,6 +298,7 @@ class App:
         self.claim_var = tk.StringVar()
         self.folder_var = tk.StringVar()
         self.drivers_var = tk.StringVar()
+        self.driverlogs_var = tk.StringVar()
         self.strategy_var = tk.StringVar(value="pair")
         self.willcall_var = tk.StringVar(value="2")
         self.suggest_var = tk.BooleanVar(value=True)
@@ -335,6 +340,8 @@ class App:
         self.lbl_claim = self._file_row(card, "claim", self.claim_var, self.browse_claim)
         self.lbl_folder = self._file_row(card, "folder", self.folder_var, self.browse_folder)
         self.lbl_drivers = self._file_row(card, "drivers", self.drivers_var, self.browse_drivers)
+        self.lbl_driverlogs = self._file_row(card, "driverlogs", self.driverlogs_var,
+                                             self.browse_driverlogs)
 
         opt = ttk.Frame(body, padding=(4, 12, 4, 6))
         opt.pack(fill="x")
@@ -540,7 +547,7 @@ class App:
         self.lbl_sub.config(text=self.t("subtitle"))
         self.lbl_sources.config(text=self.t("sec_sources"))
         for row, key in ((self.lbl_claim, "claim"), (self.lbl_folder, "folder"),
-                         (self.lbl_drivers, "drivers")):
+                         (self.lbl_drivers, "drivers"), (self.lbl_driverlogs, "driverlogs")):
             row._lbl.config(text=self.t(f"lbl_{key}"))
             row._hint.config(text=self.t(f"hint_{key}"))
             row._btn.config(text=self.t("browse"))
@@ -590,6 +597,11 @@ class App:
         if p:
             self.drivers_var.set(p)
 
+    def browse_driverlogs(self):
+        p = filedialog.askdirectory(title=self.t("lbl_driverlogs"))
+        if p:
+            self.driverlogs_var.set(p)
+
     def show_help(self):
         messagebox.showinfo(self.t("help_title"), self.t("help_body"))
 
@@ -613,14 +625,15 @@ class App:
         self.btn_csv.config(state="disabled")
         self.status.config(text=self.t("st_working"), foreground=THEMES[self.theme]["muted"])
         self.txt.delete("1.0", "end")
-        args = (claim, folder, drivers, self.strategy_var.get(), delta,
-                self.suggest_var.get(), self.spread_var.get())
+        args = (claim, folder, drivers, self.driverlogs_var.get().strip() or None,
+                self.strategy_var.get(), delta, self.suggest_var.get(), self.spread_var.get())
         threading.Thread(target=self._work, args=args, daemon=True).start()
 
-    def _work(self, claim, folder, drivers, strategy, delta, suggest, spread):
+    def _work(self, claim, folder, drivers, driverlogs, strategy, delta, suggest, spread):
         try:
             res = run_job(claim, folder, drivers_path=drivers, strategy=strategy,
-                          willcall_hours=delta, suggest_driver=suggest, spread=spread)
+                          willcall_hours=delta, suggest_driver=suggest, spread=spread,
+                          driverlogs_folder=driverlogs)
         except Exception as e:  # pragma: no cover
             res = {"error": f"{type(e).__name__}: {e}"}
         self.root.after(0, lambda: self._finish(res))
