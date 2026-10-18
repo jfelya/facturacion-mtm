@@ -185,9 +185,17 @@ def run_job(claim_path, sources_folder, drivers_path=None, strategy="pair",
     st["trips_files"] = len(src["trips"])
     st["drivers_file"] = str(src["drivers_file"] or "")
 
-    # group the output by day (chronological); inside a day keep the claim order
+    # group the output by day (chronological) and, inside each day, sort by DRIVER number
+    # (rows with no driver go last). Keeps the claim order for ties.
     if sort_by_date:
-        claim["rows"].sort(key=lambda r: (r.get("date") or "", r.get("row") or 0))
+        def _sort_key(r):
+            d = str(r.get("driver") or "")
+            try:
+                dn = int(d)
+            except (TypeError, ValueError):
+                dn = 10 ** 9
+            return (r.get("date") or "", dn, r.get("row") or 0)
+        claim["rows"].sort(key=_sort_key)
 
     return {"claim": claim, "report": report, "sources": src, "claim_path": str(claim_path),
             "drivers": drivers}

@@ -94,5 +94,8 @@ python selftest.py                # mide precisión contra septiembre
 
 ## Estado
 
-- v1.1 — probado y empaquetado. Ver `docs/NOTES.md` §12 para el detalle.
+- **v1 (HECHO)**: ClaimInformation relleno, una hoja por día, ordenado por driver. Probado y empaquetado.
+  Ver `docs/NOTES.md` §12 para el detalle.
+- **v2 (PLANIFICADO)**: llenar los **driverlogs de Word** (.docx) por driver y día. El plan completo está en
+  `docs/NOTES.md` **§15**. Todavía no construido.
 - El **BULK UPLOAD no es parte de esta app**: el usuario lo llena a mano después.
