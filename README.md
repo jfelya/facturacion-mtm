@@ -117,14 +117,20 @@ python selftest.py                # mide precisión contra septiembre
   trip files (Proceed/Cancel), chequeo de **tiempos A/B** (B no puede empezar antes que A) y apertura maximizada.
 - **v3 (HECHO)**: **BULK UPLOAD** por día — `<día>\BULK UPLOAD MM-DD-YYYY.xlsx` con el formato exacto de la plantilla
   (usado por el portal). Botón "Generar BULK UPLOAD" / CLI `--gen-bulk`. Ver `docs/NOTES.md` §17.
+- **v3.1 (HECHO)**: **32-bit universal** (corre en Windows de 32 y 64 bits) y **exe firmado** con certificado propio
+  `Disma Transportation` + instalador del certificado (`assets/codesign/`). Ver `docs/NOTES.md` §16.
 
 ## Portabilidad
 
 El `.exe` de la **raíz** es **standalone / one-file y 32-bit (x86)**: cópialo a cualquier PC con **Windows 10/11 de
 32 o 64 bits** y funciona sin instalar Python ni dependencias. En `dist\` queda la build **64-bit** y en `dist32\` la
 32-bit. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal: Excel + BULK UPLOAD +
-driverlogs OK, salidas idénticas al motor). Windows puede mostrar *"Unknown publisher"* (SmartScreen) la primera vez →
-**More info → Run anyway**.
+driverlogs OK, salidas idénticas al motor).
+
+**Firma / "Unknown publisher":** el exe está firmado con un certificado propio de **Disma Transportation**. En cada PC,
+la primera vez, ejecuta **`assets\codesign\Instalar certificado Disma.cmd`** (una vez por usuario, sin admin; Windows
+pide confirmar → Sí). Después el editor sale como *Disma Transportation* y no aparece "Unknown publisher". Ver
+`assets\codesign\LEEME - Certificado.txt`.
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
 (las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.
