@@ -168,7 +168,7 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
              "no_data": 0, "pu_filled": 0, "pu_willcall": 0, "pu_missing": 0,
              "flagged_unapproved": 0, "note_overrides": 0,
              "milage_from_trips": 0, "needs_driver": 0, "suggested": 0, "not_billed": 0,
-             "pu_estimated": 0, "dropoff_filled": 0, "paired": 0, "spread": 0}
+             "pu_estimated": 0, "dropoff_filled": 0, "paired": 0, "spread": 0, "time_warnings": 0}
 
     groups = {}
     for row in claim["rows"]:
@@ -327,6 +327,27 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
     for d in sorted(missing_days):
         n = sum(1 for r in claim["rows"] if r["date"] == d and r.get("pu") in (None, ""))
         warnings.append(f"{d}: sin archivo de viajes para ese día -> {n} PU Time quedan en blanco")
+
+    # 3.5) sanity check: a member's B leg (return) must not start/end BEFORE its A leg (same day)
+    pairs = {}
+    for row in claim["rows"]:
+        pairs.setdefault((row["date"], row["member"]), {})[row.get("leg")] = row
+    for (d, member), legs in sorted(pairs.items()):
+        a, b = legs.get("A"), legs.get("B")
+        if not a or not b:
+            continue
+        apu, bpu = a.get("pu"), b.get("pu")
+        ad, bd = a.get("dropoff"), b.get("dropoff")
+        if apu and bpu and bpu < apu:
+            warnings.append(f"{d} {member}: la pata B ({b['trip']}, PU {bpu.strftime('%H:%M')}) empieza ANTES "
+                            f"que la A ({a['trip']}, PU {apu.strftime('%H:%M')}) -> revisar tiempos")
+            b["flag"] = "revisar"
+            stats["time_warnings"] += 1
+        if ad and bd and bd < ad:
+            warnings.append(f"{d} {member}: el DropOff de la pata B ({b['trip']}, {bd.strftime('%H:%M')}) es antes "
+                            f"que el de la A ({a['trip']}, {ad.strftime('%H:%M')}) -> revisar tiempos")
+            b["flag"] = "revisar"
+            stats["time_warnings"] += 1
 
     # 4) Rows with no driver (no MTM resumen row, or unapproved number).
     #    Rank the approved drivers by how many trips they already have that day

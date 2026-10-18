@@ -16,6 +16,7 @@ L = {
         "auto_note": "override por nota", "no_mtm": "Sin datos MTM",
         "pu": "PU Time", "filled": "lleno", "empty": "vacío",
         "pu_est": "PU Time estimado (cita - 14min - 1.4×millas)",
+        "time_warn": "Avisos de tiempos",
         "milage_trips": "Milage de archivo viajes", "resumen_missing": "(resumen no lo traía)",
         "suggested": "Driver sugerido", "suggest_note": "(el menos ocupado; confirmar)",
         "not_billed": "Claim sin resumen", "not_billed_note": "(NO facturar salvo Dalia)",
@@ -41,6 +42,7 @@ L = {
         "auto_note": "note override", "no_mtm": "No MTM data",
         "pu": "PU Time", "filled": "filled", "empty": "empty",
         "pu_est": "Estimated PU Time (appt - 14min - 1.4×miles)",
+        "time_warn": "Time warnings",
         "milage_trips": "Milage from trip file", "resumen_missing": "(resumen didn't have it)",
         "suggested": "Suggested driver", "suggest_note": "(least busy; confirm)",
         "not_billed": "Claim w/o resumen", "not_billed_note": "(do NOT bill unless Dalia)",
@@ -83,6 +85,9 @@ def report_text(result, lang="es"):
                  f"(Will Call {st['pu_willcall']}) | {t['empty']} {st['pu_missing']}")
     if st.get("pu_estimated"):
         lines.append(f"  {t['pu_est']}: {st['pu_estimated']}")
+    if st.get("time_warnings"):
+        lines.append(f"  {t['time_warn']}: {st['time_warnings']}  "
+                     + ("(pata B antes que la A)" if lang == "es" else "(B leg before A)"))
     if st.get("milage_from_trips"):
         lines.append(f"  {t['milage_trips']}: {st['milage_from_trips']}  {t['resumen_missing']}")
     if st.get("suggested"):

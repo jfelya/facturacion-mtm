@@ -106,4 +106,15 @@ python selftest.py                # mide precisión contra septiembre
 - **v1 (HECHO)**: ClaimInformation relleno, una hoja por día, ordenado por driver. Probado y empaquetado.
 - **v2 (HECHO)**: **driverlogs de Word** (.docx) — uno por driver y día, en `<día>\Docs\<día> <NUM>.docx`.
   Botón "Generar driverlogs (.docx)" en la app; ver `docs/NOTES.md` §15.
+- **v2.1 (HECHO)**: regla de **condado** (Volusia/Marion), Dalia prefiere un driver libre ese día, aviso si faltan
+  trip files (Proceed/Cancel), chequeo de **tiempos A/B** (B no puede empezar antes que A) y apertura maximizada.
 - El **BULK UPLOAD no es parte de esta app**: el usuario lo llena a mano después.
+
+## Portabilidad
+
+El `.exe` es **standalone / one-file**: cópialo a cualquier PC con **Windows 10 (64-bit) o superior** y funciona sin
+instalar Python ni dependencias. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal:
+Excel + driverlogs OK). Windows puede mostrar *"Unknown publisher"* (SmartScreen) la primera vez → **More info → Run anyway**.
+
+La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
+(las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.

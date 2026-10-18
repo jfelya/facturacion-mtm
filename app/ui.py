@@ -96,6 +96,10 @@ STRINGS = {
         "err_folder": "Elige la carpeta donde están los resúmenes / viajes / drivers.",
         "err_driverlogs": "Elige la carpeta de plantillas de driverlogs (.docx).",
         "err_daysroot": "Elige la carpeta de días (donde están 10-05, 10-06…).",
+        "notrips_title": "Sin archivos de viajes",
+        "notrips_body": ("No encontré archivos de viajes (tipo 10-05.xlsx) en la carpeta de fuentes.\n\n"
+                         "Sin ellos, el PU Time, el DropOff Time y la Milage de Dalia quedarán VACÍOS.\n\n"
+                         "¿Continuar de todas formas? (Proceed) o Cancelar para agregarlos."),
         "dl_title": "Driverlogs generados",
         "dl_body": "Se generaron {n} driverlog(s) en:\n{root}\n\nSin plantilla (omitidos): {skipped}\nErrores: {errors}",
         "err_title": "Falta",
@@ -178,6 +182,10 @@ STRINGS = {
         "err_folder": "Pick the folder with the resúmenes / trips / drivers.",
         "err_driverlogs": "Pick the driverlogs templates folder (.docx).",
         "err_daysroot": "Pick the days folder (where 10-05, 10-06… live).",
+        "notrips_title": "No trip files",
+        "notrips_body": ("I found no trip files (like 10-05.xlsx) in the sources folder.\n\n"
+                         "Without them, PU Time, DropOff Time and Dalia's Milage will be EMPTY.\n\n"
+                         "Proceed anyway? (or Cancel to add them)"),
         "dl_title": "Driverlogs generated",
         "dl_body": "Generated {n} driverlog(s) in:\n{root}\n\nNo template (skipped): {skipped}\nErrors: {errors}",
         "err_title": "Missing",
@@ -644,6 +652,14 @@ class App:
             messagebox.showerror(self.t("err_title"), self.t("err_folder"))
             return
         drivers = self.drivers_var.get().strip() or None
+        # warn if the sources folder has no trip files (PU/DropOff/Dalia-Milage would be empty)
+        try:
+            from .pipeline import scan_sources
+            if not scan_sources(folder, drivers).get("trips"):
+                if not messagebox.askokcancel(self.t("notrips_title"), self.t("notrips_body")):
+                    return
+        except Exception:
+            pass
         try:
             delta = float(self.willcall_var.get())
         except ValueError:
@@ -875,4 +891,11 @@ def main():
     except Exception:
         pass
     App(root)
+    try:
+        root.state("zoomed")          # abrir maximizado (pantalla completa) en Windows
+    except Exception:
+        try:
+            root.attributes("-zoomed", True)
+        except Exception:
+            pass
     root.mainloop()
