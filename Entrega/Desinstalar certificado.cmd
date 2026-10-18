@@ -1,10 +1,9 @@
 @echo off
 title Desinstalar certificado Disma
 setlocal
-set "TP=76E57421C80055FF256CD4BE880B9377D5D9608F"
 echo Quitando el certificado de Disma Transportation de este usuario...
-certutil -delstore -user Root %TP%
-certutil -delstore -user TrustedPublisher %TP%
+certutil -delstore -user Root 341120E0D59AB570861D867AA093E4AD19A25605
+certutil -delstore -user TrustedPublisher 929CF265D50436603BEEAC22DA112CCF6CE090CD
 echo.
 echo Listo.
 pause

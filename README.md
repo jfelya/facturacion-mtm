@@ -49,6 +49,7 @@ Facturacion MTM/
 ├── recon/                  # scripts de análisis usados para descifrar formatos (referencia)
 ├── dist/                   # build 64-bit del .exe (la que se usa está en la raíz)
 ├── dist32/                 # build 32-bit (universal; es la que está en la raíz)
+├── Entrega/                # ← LO QUE SE COPIA A OTRA PC: exe + certificados + instalador
 └── build/                  # artefactos temporales de PyInstaller (se borra)
 ```
 
@@ -127,10 +128,10 @@ El `.exe` de la **raíz** es **standalone / one-file y 32-bit (x86)**: cópialo 
 32-bit. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal: Excel + BULK UPLOAD +
 driverlogs OK, salidas idénticas al motor).
 
-**Firma / "Unknown publisher":** el exe está firmado con un certificado propio de **Disma Transportation**. En cada PC,
-la primera vez, ejecuta **`Instalar certificado.cmd`** (que está junto al `.exe`, junto con `Disma-CodeSign.cer`; una vez
-por usuario, sin admin; Windows pide confirmar → Sí, el script reintenta hasta lograrlo). Después el editor sale como
-*Disma Transportation* y no aparece "Unknown publisher". Ver `LEEME - certificado Disma.txt`.
+**Firma / "Unknown publisher":** el exe está firmado con una cadena propia de **Disma Transportation** (Root CA → Code Signing).
+La carpeta **`Entrega\`** es lo que se copia a otra PC: el `.exe` + `Disma-RootCA.cer` + `Disma-CodeSign.cer` +
+**`Instalar certificado.cmd`**. En cada PC, una vez (por usuario, sin admin), ejecuta `Instalar certificado.cmd` y pulsa
+**Sí** en el aviso de Windows; luego el editor sale como *Disma Transportation*. Ver `Entrega\LEEME PRIMERO.txt`.
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
 (las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.

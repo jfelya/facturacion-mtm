@@ -1,0 +1,29 @@
+========================================================
+  FACTURACION MTM  -  LEEME PRIMERO
+========================================================
+
+Esta carpeta es TODO lo que necesitas copiar a otra PC.
+
+COMO USARLA
+  1) Copia esta carpeta completa a la PC (USB, red, etc.).
+  2) Ejecuta  "Instalar certificado.cmd"  (una sola vez por PC).
+       - Windows mostrara un aviso de seguridad  ->  pulsa SI / YES.
+       - Cuando diga "LISTO", cierra la ventana.
+  3) Abre  "Facturacion MTM.exe".
+
+  Sin el paso 2, Windows mostrara "Unknown publisher" (funciona igual,
+  pero sale ese aviso). Con el paso 2 sale "Disma Transportation".
+
+CONTENIDO
+  Facturacion MTM.exe     La aplicacion.
+  Disma-RootCA.cer        Certificado raiz (para "Trusted Root").
+  Disma-CodeSign.cer      Certificado de firma (para "Trusted Publishers").
+  Instalar certificado.cmd   Hace la instalacion por ti.
+  Desinstalar certificado.cmd  Lo quita si algun dia hace falta.
+
+NOTAS
+  - Es por USUARIO: no hace falta ser administrador.
+  - El certificado no caduca hasta 2036.
+  - "SmartScreen" (la pantalla azul "Windows protegio tu PC") depende de
+    reputacion; puede salir en un PC nuevo aunque el certificado este
+    instalado. No es un error.
