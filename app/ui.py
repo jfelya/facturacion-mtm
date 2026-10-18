@@ -295,6 +295,19 @@ def _init_dpi():
         pass
 
 
+def _set_window_icon(root):
+    """Window/taskbar icon from assets/icon.png (works both in dev and inside the onefile exe)."""
+    try:
+        import sys
+        base = getattr(sys, "_MEIPASS", None)
+        p = (Path(base) / "assets" / "icon.png") if base else (
+            Path(__file__).resolve().parents[1] / "assets" / "icon.png")
+        if p.exists():
+            root.iconphoto(True, tk.PhotoImage(file=str(p)))
+    except Exception:
+        pass
+
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -891,6 +904,7 @@ def main():
     except Exception:
         pass
     App(root)
+    _set_window_icon(root)
     try:
         root.state("zoomed")          # abrir maximizado (pantalla completa) en Windows
     except Exception:

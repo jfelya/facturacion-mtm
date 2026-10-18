@@ -17,6 +17,8 @@ Facturacion MTM/
 ├── run_app.py              # entrada por Python: GUI (doble clic) o CLI
 ├── selftest.py             # test contra los claims terminados de septiembre
 ├── Facturacion MTM.spec    # receta de PyInstaller
+├── version_info.txt        # versión/empresa que se embebe en el .exe
+├── assets/                 # icon.ico / icon.png (el .ico se genera con recon/make_icon.py)
 │
 ├── app/                    # el motor (Python)
 │   ├── common.py           #   normalización de nombres / números / fechas / horas
