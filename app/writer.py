@@ -64,6 +64,12 @@ def _write_sheet(ws, rows):
     for col, w in zip("ABCDEFGHIJ", WIDTHS):
         ws.column_dimensions[col].width = w
 
+    # the portal wants flat values: make sure nothing is left as a formula
+    for row in ws.iter_rows():
+        for c in row:
+            if c.data_type == "f":
+                c.value = None
+
 
 def write_output(claim, path, per_day=True):
     """per_day=True -> one sheet per day (default). False -> single 'ClaimInformation' sheet."""

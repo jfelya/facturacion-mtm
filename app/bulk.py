@@ -22,7 +22,8 @@ so the output is idempotent), matching the archived examples:
 
     ReportedPickupArriveTime   = PU  - 1..5 min   (A leg) / PU - 1..3 min (B leg)
     ReportedPickupPerformTime  = arrive + 1 min   (patient gets in)
-    ReportedDropoffArriveTime  = SchedDrop - 1..13 min
+    ReportedDropoffArriveTime  = SchedDrop - 1..3 min (scheduled drop-off is the
+                                 LATEST allowed; arrive a couple of minutes early)
     ReportedDropoffPerformTime = arrive (same)    (patient gets out)
 
 Extra safety rules (user, 18-oct):
@@ -157,7 +158,8 @@ def _base_sim(row):
         perform_pu = _add(arrive_pu, 1)
     if drop:
         drop = drop.replace(second=0, microsecond=0)
-        arrive_drop = _add(drop, -rng.randint(1, 13))
+        # the scheduled drop-off is the LATEST we may be there -> arrive a couple of min early
+        arrive_drop = _add(drop, -rng.randint(1, 3))
         perform_drop = arrive_drop
     # the patient cannot get out before he/she got in
     if perform_pu and arrive_drop and _mins(arrive_drop) <= _mins(perform_pu):
@@ -217,6 +219,14 @@ def row_values(row, sim=None):
 
 
 # --------------------------------------------------------------------------- workbook
+def _flatten(ws, first_row=FIRST_DATA_ROW):
+    """Guarantee the output is FLAT VALUES ONLY (no formulas anywhere below the header)."""
+    for row in ws.iter_rows(min_row=first_row):
+        for c in row:
+            if c.data_type == "f":
+                c.value = None
+
+
 def fill_workbook(rows, template=None):
     """Load the BULK UPLOAD template and write `rows` into it. Returns an openpyxl Workbook."""
     from copy import copy as _copy
@@ -252,6 +262,9 @@ def fill_workbook(rows, template=None):
     leftover = ws.max_row - (FIRST_DATA_ROW + len(rows) - 1)
     if leftover > 0:
         ws.delete_rows(FIRST_DATA_ROW + len(rows), leftover)
+
+    # BULK must be uploaded as flat values: drop any formula the template may carry
+    _flatten(ws)
     return wb
 
 
