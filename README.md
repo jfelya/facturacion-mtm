@@ -18,7 +18,7 @@ Facturacion MTM/
 ├── selftest.py             # test contra los claims terminados de septiembre
 ├── Facturacion MTM.spec    # receta de PyInstaller
 ├── version_info.txt        # versión/empresa que se embebe en el .exe
-├── assets/                 # icon.png / icon.ico (marca de MTM) — el .ico se genera con recon/make_icon.py
+├── assets/                 # icon.png / icon.ico (marca de MTM) + codesign/ (clave+firma del certificado)
 │
 ├── app/                    # el motor (Python)
 │   ├── common.py           #   normalización de nombres / números / fechas / horas
@@ -45,12 +45,10 @@ Facturacion MTM/
 ├── docs/
 │   └── NOTES.md            # handoff completo del proyecto
 │
-├── output/                 # archivos generados (ClaimInformation relleno + reportes)
-├── recon/                  # scripts de análisis usados para descifrar formatos (referencia)
-├── dist/                   # build 64-bit del .exe (la que se usa está en la raíz)
-├── dist32/                 # build 32-bit (universal; es la que está en la raíz)
 ├── Entrega/                # ← LO QUE SE COPIA A OTRA PC: exe + certificados + instalador
-└── build/                  # artefactos temporales de PyInstaller (se borra)
+├── dist/                   # (se genera al compilar con PyInstaller) build 64-bit
+├── dist32/                 # (se genera al compilar con PyInstaller) build 32-bit
+└── build/                  # (se genera al compilar) artefactos temporales de PyInstaller
 ```
 
 **Regla:** los datos de producción viven en `data/base/`; lo de prueba/referencia en `data/test/`.
