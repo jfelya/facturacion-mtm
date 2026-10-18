@@ -61,10 +61,10 @@ STRINGS = {
         "hint_daysroot": "Dónde están las carpetas 10-05, 10-06… (ej. «1. PARA FACTURAR»). Vacío → usa la carpeta de fuentes.",
         "browse": "Elegir…",
         "sec_options": "Opciones",
-        "lbl_pairs": "Driver patas A/B:",
-        "pair_pair": "Mismo en ambas (recomendado)",
-        "pair_b": "1ª fila → B",
-        "pair_a": "1ª fila → A",
+        "lbl_pairs": "Driver por pata:",
+        "pair_pair": "Mismo driver en ambas",
+        "pair_b": "Uno por pata (recomendado)",
+        "pair_a": "Uno por pata (invertido)",
         "lbl_willcall": "Will Call = hora pata A +",
         "hours": "h",
         "chk_suggest": "Sugerir driver (el menos ocupado)",
@@ -109,7 +109,7 @@ STRINGS = {
         "err_title": "Falta",
         "prev_summary": "RESUMEN VISTA PREVIA",
         "exp_title": "Guardado",
-        "exp_body": "Archivo listo:\n{path}\n\n{rows} filas en {sheets} hoja(s) (una por día).\n\nSube este archivo al portal MTM.",
+        "exp_body": "Archivo guardado:\n{path}\n\n{rows} filas en {sheets} hoja(s) (una por día).",
         "csv_title": "Guardado",
         "csv_body": "Reporte guardado:\n{path}",
         "pend_title": "Faltan drivers",
@@ -151,10 +151,10 @@ STRINGS = {
         "hint_daysroot": "Where the 10-05, 10-06… folders live (e.g. «1. PARA FACTURAR»). Empty → uses the sources folder.",
         "browse": "Browse…",
         "sec_options": "Options",
-        "lbl_pairs": "A/B legs driver:",
-        "pair_pair": "Same on both (recommended)",
-        "pair_b": "1st row → B",
-        "pair_a": "1st row → A",
+        "lbl_pairs": "Driver per leg:",
+        "pair_pair": "Same driver both legs",
+        "pair_b": "One driver per leg (recommended)",
+        "pair_a": "One driver per leg (reversed)",
         "lbl_willcall": "Will Call = A-leg time +",
         "hours": "h",
         "chk_suggest": "Suggest driver (least busy)",
@@ -199,7 +199,7 @@ STRINGS = {
         "err_title": "Missing",
         "prev_summary": "PREVIEW SUMMARY",
         "exp_title": "Saved",
-        "exp_body": "File ready:\n{path}\n\n{rows} rows in {sheets} sheet(s) (one per day).\n\nUpload this file to the MTM portal.",
+        "exp_body": "File saved:\n{path}\n\n{rows} rows in {sheets} sheet(s) (one per day).",
         "csv_title": "Saved",
         "csv_body": "Report saved:\n{path}",
         "pend_title": "Missing drivers",
@@ -324,6 +324,7 @@ class App:
         self.result = None
         self._assign_map = {}
         self._assign_cands = []
+        self._imgs = {}
 
         root.title("Facturación MTM")
         root.geometry("1180x790")
@@ -343,7 +344,7 @@ class App:
         self.drivers_var = tk.StringVar()
         self.driverlogs_var = tk.StringVar()
         self.daysroot_var = tk.StringVar()
-        self.strategy_var = tk.StringVar(value="pair")
+        self.strategy_var = tk.StringVar(value="first_row_B")
         self.willcall_var = tk.StringVar(value="2")
         self.suggest_var = tk.BooleanVar(value=True)
         self.spread_var = tk.BooleanVar(value=True)
@@ -393,10 +394,10 @@ class App:
         opt.pack(fill="x")
         self.lbl_pairs = ttk.Label(opt)
         self.lbl_pairs.pack(side="left")
-        self.rb_pair = ttk.Radiobutton(opt, text="", variable=self.strategy_var, value="pair")
-        self.rb_pair.pack(side="left", padx=(6, 0))
         self.rb_b = ttk.Radiobutton(opt, text="", variable=self.strategy_var, value="first_row_B")
-        self.rb_b.pack(side="left", padx=(10, 0))
+        self.rb_b.pack(side="left", padx=(6, 0))
+        self.rb_pair = ttk.Radiobutton(opt, text="", variable=self.strategy_var, value="pair")
+        self.rb_pair.pack(side="left", padx=(10, 0))
         self.rb_a = ttk.Radiobutton(opt, text="", variable=self.strategy_var, value="first_row_A")
         self.rb_a.pack(side="left", padx=(10, 0))
         self.lbl_willcall = ttk.Label(opt)
@@ -575,11 +576,37 @@ class App:
 
     def _draw_controls(self):
         th = THEMES[self.theme]
-        _draw_flag(self.lang_canvas, self.lang, th["header"])
-        # small language code next to the flag
-        self.lang_canvas.create_text(56, 15, text=self.lang.upper(), fill=th["header_fg"],
+        # language button: crisp flag PNG + the ES/EN code
+        self.lang_canvas.configure(bg=th["header"])
+        self.lang_canvas.delete("all")
+        flag = self._img("ve" if self.lang == "es" else "us")
+        if flag is not None:
+            self.lang_canvas.create_image(0, 0, anchor="nw", image=flag)
+        else:
+            _draw_flag(self.lang_canvas, self.lang, th["header"])
+        self.lang_canvas.create_text(58, 15, text=self.lang.upper(), fill=th["header_fg"],
                                      font=self.font_bold, anchor="e")
-        _draw_theme_icon(self.theme_canvas, self.theme, th["header"])
+        # theme button: crisp sun/moon PNG
+        self.theme_canvas.configure(bg=th["header"])
+        self.theme_canvas.delete("all")
+        icon = self._img("moon" if self.theme == "dark" else "sun")
+        if icon is not None:
+            self.theme_canvas.create_image(20, 15, anchor="center", image=icon)
+        else:
+            _draw_theme_icon(self.theme_canvas, self.theme, th["header"])
+
+    def _img(self, name):
+        """Load+cache a UI PNG from assets/ui (works in dev and inside the one-file exe)."""
+        if name not in self._imgs:
+            import sys
+            base = getattr(sys, "_MEIPASS", None)
+            p = ((Path(base) / "assets" / "ui" / f"{name}.png") if base else
+                 (Path(__file__).resolve().parents[1] / "assets" / "ui" / f"{name}.png"))
+            try:
+                self._imgs[name] = tk.PhotoImage(file=str(p))
+            except Exception:
+                self._imgs[name] = None
+        return self._imgs[name]
 
     # ---------------- i18n ----------------
     def t(self, key, **kw):

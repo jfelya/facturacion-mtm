@@ -28,7 +28,7 @@ def main_cli(args):
 
     claim, folder = args[0], args[1]
     drivers = out = driverlogs = days_root = None
-    strategy = "pair"
+    strategy = "first_row_B"
     suggest = True
     spread = True
     keep_order = False

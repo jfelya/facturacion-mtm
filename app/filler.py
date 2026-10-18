@@ -152,7 +152,7 @@ def _assign(row, x, drivers, warnings, review, stats):
 
 
 def fill_claim(claim, resumen_index, trips_by_date, drivers,
-               strategy="pair", willcall_delta=timedelta(hours=2),
+               strategy="first_row_B", willcall_delta=timedelta(hours=2),
                driver_usage=None, suggest_driver=True, spread=True,
                pickup_ratio=PICKUP_RATIO, pickup_buffer=PICKUP_BUFFER, pickup_jitter=PICKUP_JITTER):
     """Modifies claim['rows'] in place. Returns report dict.
