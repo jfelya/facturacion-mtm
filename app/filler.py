@@ -93,11 +93,13 @@ def _assign(row, x, drivers, warnings, review, stats):
         stats["note_overrides"] += 1
 
     # approval check
+    # approval check: a number NOT in Informacion de Drivers is not billable -> it is
+    # replaced later by a free driver of that day (see the "suggested driver" pass below)
     if driver and drivers and driver not in drivers["table"]:
         driver = ""
         row["flag"] = "revisar"
         warnings.append(f"{row['date']} {row['member']} {row['trip']}: driver {number} NO está aprobado en "
-                        f"Informacion de Drivers -> elegir driver manualmente (quedaron Driver/License/VIN en blanco)")
+                        f"Informacion de Drivers -> se reemplaza por un driver libre de ese día (revisar)")
         stats["flagged_unapproved"] += 1
 
     if driver:
