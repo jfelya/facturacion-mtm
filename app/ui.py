@@ -15,33 +15,37 @@ from .pipeline import run_job
 from .report import report_text, write_report_csv
 from .writer import write_output
 
-# ---------------- themes (pastel) ----------------
+# ---------------- themes (portable design system: dark-first, flat, 1px borders) ----------------
+# Tokens from VISUAL_DESIGN_SYSTEM.md (SelfishNet v2). Tk approximates it: square corners,
+# flat surfaces, semantic colours. Keys kept from the previous theme dict for compatibility.
 THEMES = {
     "light": {
-        "bg": "#eaeef3", "card": "#ffffff", "header": "#1f3a5f",
-        "header_fg": "#ffffff", "header_sub": "#c7d6e6",
-        "accent": "#2f6fb3", "accent_d": "#245a92", "accent_fg": "#ffffff",
-        "accent_dis": "#9bb4cd", "accent_dis_fg": "#eef2f6",
-        "muted": "#5b6b7c", "txt": "#1e2a36", "border": "#d3d9e0",
-        "entry": "#ffffff", "tree": "#ffffff", "head": "#e9eef5", "tab_bg": "#dfe5ee",
-        "btn": "#e3e9f2", "btn_hover": "#d3dce8",
-        "status": {"OK": "#dcf5dc", "NOTA": "#fff3cd", "SUGERIDO": "#e6d9f7",
-                   "BALANCEADO": "#cdeef5",
-                   "REVISAR": "#ffe0b3", "ELEGIR": "#dbe9ff", "NO FACTURAR": "#e2e3e5",
-                   "SIN DATO": "#f8d7da"},
+        "bg": "#F3F5F7", "card": "#FFFFFF", "header": "#FFFFFF",
+        "header_fg": "#1F2328", "header_sub": "#5A6572",
+        "accent": "#0969DA", "accent_d": "#2F7FE0", "accent_fg": "#FFFFFF",
+        "accent_dis": "#B7C4D2", "accent_dis_fg": "#F3F5F7",
+        "muted": "#5A6572", "txt": "#1F2328", "border": "#D2D9E0",
+        "entry": "#FFFFFF", "tree": "#FFFFFF", "head": "#ECEFF3", "tab_bg": "#F3F5F7",
+        "btn": "#FFFFFF", "btn_hover": "#ECEFF3", "sel": "#D6E6FA",
+        "success": "#1A7F37", "danger": "#CF222E",
+        "status": {"OK": "#DDF4E0", "NOTA": "#FFF3CD", "SUGERIDO": "#E7DDF7",
+                   "BALANCEADO": "#D7EEF5",
+                   "REVISAR": "#FDE7C7", "ELEGIR": "#D9E7FB", "NO FACTURAR": "#E7E9EC",
+                   "SIN DATO": "#FBDDDD"},
     },
     "dark": {
-        "bg": "#1b2230", "card": "#232c3d", "header": "#121826",
-        "header_fg": "#eaf1fa", "header_sub": "#9fb3cc",
-        "accent": "#8fb8e0", "accent_d": "#a9caea", "accent_fg": "#16202e",
-        "accent_dis": "#3d4b60", "accent_dis_fg": "#7d8ba0",
-        "muted": "#93a2b6", "txt": "#e8eef7", "border": "#33405a",
-        "entry": "#1f2836", "tree": "#232c3d", "head": "#2b3648", "tab_bg": "#1b2230",
-        "btn": "#2e394d", "btn_hover": "#3a4760",
-        "status": {"OK": "#2f4d3a", "NOTA": "#4d4526", "SUGERIDO": "#3d3454",
-                   "BALANCEADO": "#244a52",
-                   "REVISAR": "#4d3f27", "ELEGIR": "#2a3d52", "NO FACTURAR": "#39414d",
-                   "SIN DATO": "#4d2f34"},
+        "bg": "#14171B", "card": "#1C2128", "header": "#1C2128",
+        "header_fg": "#E6EDF3", "header_sub": "#9AA7B4",
+        "accent": "#4C8DFF", "accent_d": "#6FA3FF", "accent_fg": "#FFFFFF",
+        "accent_dis": "#333B47", "accent_dis_fg": "#9AA7B4",
+        "muted": "#9AA7B4", "txt": "#E6EDF3", "border": "#333B47",
+        "entry": "#1C2128", "tree": "#1C2128", "head": "#262C35", "tab_bg": "#14171B",
+        "btn": "#1C2128", "btn_hover": "#262C35", "sel": "#25344A",
+        "success": "#3FB950", "danger": "#F85149",
+        "status": {"OK": "#183A22", "NOTA": "#3D2E12", "SUGERIDO": "#2C2640",
+                   "BALANCEADO": "#14333B",
+                   "REVISAR": "#3B2E17", "ELEGIR": "#1B2C44", "NO FACTURAR": "#2A2F36",
+                   "SIN DATO": "#3B1F22"},
     },
 }
 
@@ -337,13 +341,15 @@ class App:
         root.minsize(1020, 640)
 
         fams = set(tkfont.families())
-        self.fam = _pick_family(["Segoe UI Semibold", "Segoe UI", "Arial"], fams)
-        fam_r = _pick_family(["Segoe UI", "Arial"], fams)
-        self.font = (self.fam, 11)
-        self.font_bold = (self.fam, 11, "bold")
-        self.font_title = (self.fam, 17, "bold")
-        self.font_small = (fam_r, 9)
-        self.font_mono = ("Consolas", 10)
+        # Design system uses "Segoe UI Variable Text @ Medium"; Tk has only normal/bold,
+        # so use the Semibold face as the base weight to get that slightly-bolder look.
+        self.fam = _pick_family(["Segoe UI Semibold", "Segoe UI Variable Text", "Segoe UI", "Arial"], fams)
+        fam_r = _pick_family(["Segoe UI Semibold", "Segoe UI", "Arial"], fams)
+        self.font = (self.fam, -13)          # 13 px base (design system)
+        self.font_bold = (self.fam, -13, "bold")
+        self.font_title = (self.fam, -17, "bold")
+        self.font_small = (fam_r, -11)
+        self.font_mono = ("Consolas", -12)
 
         self.claim_var = tk.StringVar()
         self.folder_var = tk.StringVar()
@@ -362,8 +368,10 @@ class App:
 
     # ---------------- layout ----------------
     def _build(self):
-        head = ttk.Frame(self.root, style="Header.TFrame", padding=(18, 12))
+        head = ttk.Frame(self.root, style="Header.TFrame", padding=(16, 10))
         head.pack(fill="x")
+        self.hline = tk.Frame(self.root, height=1)
+        self.hline.pack(fill="x")
         left = ttk.Frame(head, style="Header.TFrame")
         left.pack(side="left")
         self.lbl_title = ttk.Label(left, style="Header.TLabel")
@@ -373,14 +381,12 @@ class App:
 
         ctrl = ttk.Frame(head, style="Header.TFrame")
         ctrl.pack(side="right")
-        self.theme_canvas = tk.Canvas(ctrl, width=40, height=30, highlightthickness=0,
-                                      bd=0, cursor="hand2")
-        self.theme_canvas.pack(side="right", padx=(10, 0))
-        self.theme_canvas.bind("<Button-1>", lambda e: self._toggle_theme())
-        self.lang_canvas = tk.Canvas(ctrl, width=64, height=30, highlightthickness=0,
-                                     bd=0, cursor="hand2")
-        self.lang_canvas.pack(side="right")
-        self.lang_canvas.bind("<Button-1>", lambda e: self._toggle_lang())
+        self.theme_lbl = tk.Label(ctrl, bd=0, highlightthickness=0, cursor="hand2")
+        self.theme_lbl.pack(side="right", padx=(10, 0))
+        self.theme_lbl.bind("<Button-1>", lambda e: self._toggle_theme())
+        self.lang_lbl = tk.Label(ctrl, bd=0, highlightthickness=0, cursor="hand2")
+        self.lang_lbl.pack(side="right")
+        self.lang_lbl.bind("<Button-1>", lambda e: self._toggle_lang())
 
         body = ttk.Frame(self.root, padding=(14, 12, 14, 10))
         body.pack(fill="both", expand=True)
@@ -470,8 +476,14 @@ class App:
 
         self._build_assign_tab(tab3)
 
-        self.status = ttk.Label(self.root, style="Status.TLabel", anchor="w", padding=(16, 6))
-        self.status.pack(fill="x", side="bottom")
+        self.sline = tk.Frame(self.root, height=1)
+        self.sline.pack(fill="x", side="bottom")
+        self.statusbar = ttk.Frame(self.root, style="Header.TFrame")
+        self.statusbar.pack(fill="x", side="bottom")
+        self.status_dot = tk.Canvas(self.statusbar, width=9, height=9, highlightthickness=0, bd=0)
+        self.status_dot.pack(side="left", padx=(16, 8), pady=9)
+        self.status = ttk.Label(self.statusbar, style="Status.TLabel", anchor="w")
+        self.status.pack(side="left", fill="x", expand=True, padx=(0, 14), pady=6)
 
     def _file_row(self, parent, key, var, browse):
         row = ttk.Frame(parent, style="Card.TFrame")
@@ -530,10 +542,12 @@ class App:
             pass
         self.root.configure(bg=th["bg"])
         self.root.option_add("*Font", self.font)
-        style.configure(".", background=th["bg"], foreground=th["txt"], font=self.font)
-        style.configure("TFrame", background=th["bg"])
-        style.configure("Card.TFrame", background=th["card"])
-        style.configure("Header.TFrame", background=th["header"])
+        style.configure(".", background=th["bg"], foreground=th["txt"], font=self.font,
+                        bordercolor=th["border"], focuscolor=th["accent"], borderwidth=0)
+        style.configure("TFrame", background=th["bg"], borderwidth=0)
+        style.configure("Card.TFrame", background=th["card"], borderwidth=1, relief="solid",
+                        bordercolor=th["border"])
+        style.configure("Header.TFrame", background=th["header"], borderwidth=0)
         style.configure("TLabel", background=th["bg"], foreground=th["txt"], font=self.font)
         style.configure("Card.TLabel", background=th["card"], foreground=th["txt"], font=self.font)
         style.configure("Bold.TLabel", background=th["card"], foreground=th["txt"], font=self.font_bold)
@@ -542,37 +556,46 @@ class App:
                         font=self.font_title)
         style.configure("HeaderSub.TLabel", background=th["header"], foreground=th["header_sub"],
                         font=self.font_small)
-        style.configure("Status.TLabel", background=th["bg"], foreground=th["muted"], font=self.font_small)
-        style.configure("TButton", font=self.font, padding=(12, 6),
-                        background=th["btn"], foreground=th["txt"],
-                        bordercolor=th["border"], focuscolor=th["card"])
+        style.configure("Status.TLabel", background=th["header"], foreground=th["muted"], font=self.font_small)
+        # base button: surface + 1px border; hover tint + accent border (design system §6.1)
+        style.configure("TButton", font=self.font, padding=(14, 7), background=th["btn"],
+                        foreground=th["txt"], bordercolor=th["border"], borderwidth=1,
+                        relief="flat", focuscolor=th["card"])
         style.map("TButton",
-                  background=[("active", th["btn_hover"]), ("pressed", th["btn_hover"])],
+                  background=[("active", th["btn_hover"]), ("pressed", th["sel"])],
+                  bordercolor=[("active", th["accent"])],
                   foreground=[("disabled", th["muted"])])
-        style.configure("Accent.TButton", font=self.font_bold, padding=(16, 8),
-                        background=th["accent"], foreground=th["accent_fg"], borderwidth=0)
+        style.configure("Accent.TButton", font=self.font_bold, padding=(16, 7),
+                        background=th["accent"], foreground=th["accent_fg"],
+                        bordercolor=th["accent"], borderwidth=1, relief="flat")
         style.map("Accent.TButton",
-                  background=[("active", th["accent_d"]), ("disabled", th["accent_dis"])],
+                  background=[("active", th["accent_d"]), ("pressed", th["accent"]),
+                              ("disabled", th["accent_dis"])],
+                  bordercolor=[("disabled", th["accent_dis"])],
                   foreground=[("disabled", th["accent_dis_fg"])])
-        style.configure("TEntry", padding=6, fieldbackground=th["entry"], foreground=th["txt"],
-                        insertcolor=th["txt"], bordercolor=th["border"])
+        style.configure("TEntry", padding=(6, 3), fieldbackground=th["entry"], foreground=th["txt"],
+                        insertcolor=th["txt"], bordercolor=th["border"], borderwidth=1)
+        style.map("TEntry", bordercolor=[("focus", th["accent"])])
         style.configure("TCombobox", fieldbackground=th["entry"], background=th["entry"],
-                        foreground=th["txt"], arrowcolor=th["txt"])
+                        foreground=th["txt"], arrowcolor=th["muted"], bordercolor=th["border"],
+                        borderwidth=1, padding=(6, 3))
         style.map("TCombobox", fieldbackground=[("readonly", th["entry"])],
                   foreground=[("readonly", th["txt"])])
         style.configure("TSpinbox", fieldbackground=th["entry"], foreground=th["txt"],
-                        arrowcolor=th["txt"], insertcolor=th["txt"])
+                        arrowcolor=th["muted"], insertcolor=th["txt"], bordercolor=th["border"])
         style.configure("TNotebook", background=th["bg"], borderwidth=0, tabmargins=(6, 6, 6, 0))
-        style.configure("TNotebook.Tab", font=self.font, padding=(18, 9),
+        style.configure("TNotebook.Tab", font=self.font, padding=(14, 8),
                         background=th["tab_bg"], foreground=th["muted"])
         style.map("TNotebook.Tab", background=[("selected", th["card"])],
                   foreground=[("selected", th["accent"])])
-        style.configure("Treeview", font=self.font_small, rowheight=27,
-                        background=th["tree"], fieldbackground=th["tree"], foreground=th["txt"])
+        style.configure("Treeview", font=self.font_small, rowheight=30,
+                        background=th["tree"], fieldbackground=th["tree"], foreground=th["txt"],
+                        bordercolor=th["border"], borderwidth=1, relief="flat")
         style.configure("Treeview.Heading", font=self.font_bold, background=th["head"],
-                        foreground=th["txt"], relief="flat")
-        style.map("Treeview", background=[("selected", th["accent"])],
-                  foreground=[("selected", th["accent_fg"])])
+                        foreground=th["muted"], relief="flat", padding=(10, 8))
+        style.map("Treeview", background=[("selected", th["sel"])],
+                  foreground=[("selected", th["txt"])])
+        style.map("Treeview.Heading", background=[("active", th["head"])])
         style.configure("TRadiobutton", background=th["card"], foreground=th["txt"], font=self.font)
         style.map("TRadiobutton", background=[("active", th["card"])])
         style.configure("TCheckbutton", background=th["card"], foreground=th["txt"], font=self.font)
@@ -581,26 +604,27 @@ class App:
         self.txt.configure(bg=th["tree"], fg=th["txt"], insertbackground=th["txt"])
         for name, col in th["status"].items():
             self.tree.tag_configure(name, background=col, foreground=th["txt"])
+        # 1-px separators (toolbar bottom / status top)
+        if hasattr(self, "hline"):
+            self.hline.configure(bg=th["border"])
+        if hasattr(self, "sline"):
+            self.sline.configure(bg=th["border"])
+        if hasattr(self, "status_dot"):
+            self._dot(th["muted"])
         self._draw_controls()
+
+    def _dot(self, color):
+        self.status_dot.delete("all")
+        self.status_dot.create_oval(1, 1, 8, 8, fill=color, outline=color)
 
     def _draw_controls(self):
         th = THEMES[self.theme]
-        # language button: crisp flag PNG + the ES/EN code
-        self.lang_canvas.configure(bg=th["header"])
-        self.lang_canvas.delete("all")
         flag = self._img("ve" if self.lang == "es" else "us")
         if flag is not None:
-            self.lang_canvas.create_image(0, 0, anchor="nw", image=flag)
-        else:
-            _draw_flag(self.lang_canvas, self.lang, th["header"])
-        # theme button: crisp sun/moon PNG
-        self.theme_canvas.configure(bg=th["header"])
-        self.theme_canvas.delete("all")
+            self.lang_lbl.configure(image=flag, bg=th["header"])
         icon = self._img("moon" if self.theme == "dark" else "sun")
         if icon is not None:
-            self.theme_canvas.create_image(20, 15, anchor="center", image=icon)
-        else:
-            _draw_theme_icon(self.theme_canvas, self.theme, th["header"])
+            self.theme_lbl.configure(image=icon, bg=th["header"])
 
     def _img(self, name):
         """Load+cache a UI PNG from assets/ui (works in dev and inside the one-file exe)."""
@@ -665,6 +689,7 @@ class App:
         self._draw_controls()
         if not self.result:
             self.status.config(text=self.t("st_idle"))
+            self._dot(THEMES[self.theme]["muted"])
 
     # ---------------- browse ----------------
     def browse_claim(self):
@@ -729,6 +754,7 @@ class App:
         self.btn_driverlogs.config(state="disabled")
         self.btn_bulk.config(state="disabled")
         self.status.config(text=self.t("st_working"), foreground=THEMES[self.theme]["muted"])
+        self._dot(THEMES[self.theme]["accent"])
         self.txt.delete("1.0", "end")
         args = (claim, folder, drivers, self.driverlogs_var.get().strip() or None,
                 self.strategy_var.get(), delta, self.suggest_var.get(), self.spread_var.get(),
@@ -747,7 +773,8 @@ class App:
     def _finish(self, res):
         self.btn_run.config(state="normal")
         if res.get("error"):
-            self.status.config(text=self.t("st_error"), foreground="#e06c75")
+            self.status.config(text=self.t("st_error"), foreground=THEMES[self.theme]["danger"])
+            self._dot(THEMES[self.theme]["danger"])
             messagebox.showerror(self.t("st_error"), res["error"])
             return
         self.result = res
@@ -802,6 +829,7 @@ class App:
                                        nofact=counts["NO FACTURAR"], revisar=counts["REVISAR"],
                                        sindato=counts["SIN DATO"]),
                            foreground=THEMES[self.theme]["accent"])
+        self._dot(THEMES[self.theme]["success"])
 
     # ---------------- assign tab ----------------
     def _populate_assign(self):
