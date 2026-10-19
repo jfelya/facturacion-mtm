@@ -18,6 +18,3 @@ __pycache__/
 .venv/
 venv/
 *.spec.bak
-
-# ---- Code-signing private key (never commit) ----
-assets/codesign/*.pfx

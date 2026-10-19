@@ -18,7 +18,7 @@ Facturacion MTM/
 ├── selftest.py             # test contra los claims terminados de septiembre
 ├── Facturacion MTM.spec    # receta de PyInstaller
 ├── version_info.txt        # versión/empresa que se embebe en el .exe
-├── assets/                 # icon.png / icon.ico (marca de MTM) + codesign/ (clave+firma del certificado)
+├── assets/                 # icon.png / icon.ico (marca de MTM) + ui/ (iconos del kit)
 │
 ├── app/                    # el motor (Python)
 │   ├── common.py           #   normalización de nombres / números / fechas / horas
@@ -46,7 +46,7 @@ Facturacion MTM/
 ├── docs/
 │   └── NOTES.md            # handoff completo del proyecto
 │
-├── Entrega/                # ← LO QUE SE COPIA A OTRA PC: exe + certificados + instalador
+├── Entrega/                # ← LO QUE SE COPIA A OTRA PC: el .exe + LEEME
 ├── dist/                   # (se genera al compilar con PyInstaller) build 64-bit
 ├── dist32/                 # (se genera al compilar con PyInstaller) build 32-bit
 └── build/                  # (se genera al compilar) artefactos temporales de PyInstaller
@@ -118,8 +118,8 @@ python selftest.py                # mide precisión contra septiembre
   trip files (Proceed/Cancel), chequeo de **tiempos A/B** (B no puede empezar antes que A) y apertura maximizada.
 - **v3 (HECHO)**: **BULK UPLOAD** por día — `<día>\BULK UPLOAD MM-DD-YYYY.xlsx` con el formato exacto de la plantilla
   (usado por el portal). Botón "Generar BULK UPLOAD" / CLI `--gen-bulk`. Ver `docs/NOTES.md` §17.
-- **v3.1 (HECHO)**: **32-bit universal** (corre en Windows de 32 y 64 bits) y **exe firmado** con certificado propio
-  `Disma Transportation` + instalador del certificado (`assets/codesign/`). Ver `docs/NOTES.md` §16.
+- **v3.1 (HECHO)**: **32-bit universal** (corre en Windows de 32 y 64 bits).
+  La firma digital quedó **pendiente** (por ahora el exe va sin firmar).
 
 ## Portabilidad
 
@@ -128,10 +128,9 @@ El `.exe` de la **raíz** es **standalone / one-file y 32-bit (x86)**: cópialo 
 regeneran al compilar con PyInstaller. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal: Excel + BULK UPLOAD +
 driverlogs OK, salidas idénticas al motor).
 
-**Firma / "Unknown publisher":** el exe está firmado con una cadena propia de **Disma Transportation** (Root CA → Code Signing).
-La carpeta **`Entrega\`** es lo que se copia a otra PC: el `.exe` + `Disma-RootCA.cer` + `Disma-CodeSign.cer` +
-**`Instalar certificado.cmd`**. En cada PC, una vez (por usuario, sin admin), ejecuta `Instalar certificado.cmd` y pulsa
-**Sí** en el aviso de Windows; luego el editor sale como *Disma Transportation*. Ver `Entrega\LEEME PRIMERO.txt`.
+**Firma digital:** por ahora el `.exe` va **sin firmar**. Windows puede mostrar "Unknown publisher" la primera vez →
+*Más información → Ejecutar de todas formas*. La carpeta **`Entrega\`** es lo que se copia a otra PC: el `.exe` +
+`LEEME PRIMERO.txt`. La firma de código queda **pendiente** (ver `docs/NOTES.md` §16).
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
 (las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.
