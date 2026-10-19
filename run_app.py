@@ -31,6 +31,7 @@ def main_cli(args):
     strategy = "first_row_B"
     suggest = True
     spread = True
+    balance = True
     keep_order = False
     gen_dl = False
     gen_bulk = False
@@ -60,13 +61,15 @@ def main_cli(args):
             suggest = False; i += 1
         elif rest[i] == "--no-spread":
             spread = False; i += 1
+        elif rest[i] == "--no-balance":
+            balance = False; i += 1
         elif rest[i] == "--keep-order":
             keep_order = True; i += 1
         else:
             i += 1
 
     res = run_job(claim, folder, drivers_path=drivers, strategy=strategy,
-                  suggest_driver=suggest, sort_by_date=not keep_order, spread=spread,
+                  suggest_driver=suggest, sort_by_date=not keep_order, spread=spread, balance=balance,
                   pickup_ratio=ratio, pickup_buffer=buffer, driverlogs_folder=driverlogs)
     if res.get("error"):
         p("ERROR:", res["error"])

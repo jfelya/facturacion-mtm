@@ -50,6 +50,13 @@ PICKUP_RATIO = 1.4        # minutes per mile
 PICKUP_BUFFER = 14        # fixed minutes per trip
 PICKUP_JITTER = 3         # +/- minutes, deterministic per trip (looks legit)
 
+# Soft load-balancing (user, 18-oct): drivers usually do ~2 trips/day; when someone ends up
+# with too many, spread the extra ones across the area's approved drivers (same county).
+# It's a soft guide, not a hard rule -> only touches drivers ABOVE BALANCE_MAX and moves to
+# drivers BELOW BALANCE_TARGET; never crosses counties; rows flagged 'balanceado' to review.
+BALANCE_TARGET = 2
+BALANCE_MAX = 3
+
 
 def _halve_if_doubled(res):
     """Some resumen files contain every row duplicated (orig + orig)."""
@@ -105,6 +112,7 @@ def _assign(row, x, drivers, warnings, review, stats):
     # note instruction ("Driver X, auto N") wins over the resumen number
     if note_drv and drivers and note_drv in drivers["table"] and note_drv != driver:
         driver = note_drv
+        row["note_drv"] = True
         review.append(f"DRIVER POR NOTA {row['date']} {row['member']} {row['trip']}: se usa {note_drv} "
                       f"(resumen dice {number or '-'}): {note[:60]}")
         stats["note_overrides"] += 1
@@ -151,9 +159,68 @@ def _assign(row, x, drivers, warnings, review, stats):
         review.append(f"NOTA {row['date']} {row['member']} {row['trip']}: {note[:90]}")
 
 
+def _balance_drivers(claim, drivers, stats, review):
+    """Soft balancing: no driver should end the day with too many trips.
+
+    For each day, any driver ABOVE `BALANCE_MAX` gives extra trips (preferring ones NOT pinned
+    by a manual note) to approved drivers of the SAME county that are BELOW `BALANCE_TARGET`.
+    Moved rows are flagged 'balanceado' so the user reviews them. Never crosses counties.
+    """
+    if not drivers:
+        return
+    table = drivers["table"]
+    allowed = drivers.get("allowed") or set(table)
+    approved = [n for n in allowed if n not in PLACEHOLDER_DRIVERS]
+
+    def county(n):
+        return table.get(n, {}).get("county") or ""
+
+    by_date = {}
+    for r in claim["rows"]:
+        if r.get("driver") and r.get("flag") != "nofacturar":
+            by_date.setdefault(r["date"], []).append(r)
+
+    moved = 0
+    for date in sorted(by_date):
+        rows = by_date[date]
+        counts = {}
+        for r in rows:
+            counts[r["driver"]] = counts.get(r["driver"], 0) + 1
+        progress = True
+        while progress:
+            progress = False
+            over = sorted((d for d, c in counts.items() if c > BALANCE_MAX),
+                          key=lambda d: (-counts[d], _drv_sort(d)))
+            for src in over:
+                sc = county(src)
+                receivers = [n for n in approved
+                             if n != src and county(n) == sc and counts.get(n, 0) < BALANCE_TARGET]
+                if not receivers:
+                    continue
+                dst = min(receivers, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
+                src_rows = [r for r in rows if r.get("driver") == src]
+                # move the most "flexible" trip: not pinned by a manual note, most recent first
+                src_rows.sort(key=lambda r: (1 if r.get("note_drv") else 0, -(r.get("row") or 0)))
+                r = src_rows[0]
+                info = table.get(dst, {})
+                old = r["driver"]
+                r["driver"] = dst
+                r["license"] = info.get("license", "")
+                r["vin"] = info.get("vin", "")
+                if r.get("flag") != "sugerido":
+                    r["flag"] = "balanceado"
+                counts[old] -= 1
+                counts[dst] = counts.get(dst, 0) + 1
+                moved += 1
+                progress = True
+                review.append(f"REPARTO {date} {r['member']} {r['trip']}: {old} -> {dst} "
+                              f"(meta ~{BALANCE_TARGET} viajes/driver en {sc or 'area'})")
+    stats["balanced"] = moved
+
+
 def fill_claim(claim, resumen_index, trips_by_date, drivers,
                strategy="first_row_B", willcall_delta=timedelta(hours=2),
-               driver_usage=None, suggest_driver=True, spread=True,
+               driver_usage=None, suggest_driver=True, spread=True, balance=True,
                pickup_ratio=PICKUP_RATIO, pickup_buffer=PICKUP_BUFFER, pickup_jitter=PICKUP_JITTER):
     """Modifies claim['rows'] in place. Returns report dict.
 
@@ -168,7 +235,8 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
              "no_data": 0, "pu_filled": 0, "pu_willcall": 0, "pu_missing": 0,
              "flagged_unapproved": 0, "note_overrides": 0,
              "milage_from_trips": 0, "needs_driver": 0, "suggested": 0, "not_billed": 0,
-             "pu_estimated": 0, "dropoff_filled": 0, "paired": 0, "spread": 0, "time_warnings": 0}
+             "pu_estimated": 0, "dropoff_filled": 0, "paired": 0, "spread": 0, "time_warnings": 0,
+             "balanced": 0}
 
     groups = {}
     for row in claim["rows"]:
@@ -427,6 +495,10 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             needs_driver.append({"date": r["date"], "trip": r["trip"], "member": r["member"],
                                  "milage": r.get("milage"), "county": r.get("county") or ""})
             stats["needs_driver"] += 1
+
+    # 4.5) Soft balancing: spread trips so no driver ends the day overloaded (~2 each, same county).
+    if balance:
+        _balance_drivers(claim, drivers, stats, review)
 
     # advisory: MTM resumen groups with no claim row at all -> not billed
     claim_keys = {(r["date"], r["member"]) for r in claim["rows"]}

@@ -26,6 +26,7 @@ THEMES = {
         "entry": "#ffffff", "tree": "#ffffff", "head": "#e9eef5", "tab_bg": "#dfe5ee",
         "btn": "#e3e9f2", "btn_hover": "#d3dce8",
         "status": {"OK": "#dcf5dc", "NOTA": "#fff3cd", "SUGERIDO": "#e6d9f7",
+                   "BALANCEADO": "#cdeef5",
                    "REVISAR": "#ffe0b3", "ELEGIR": "#dbe9ff", "NO FACTURAR": "#e2e3e5",
                    "SIN DATO": "#f8d7da"},
     },
@@ -38,6 +39,7 @@ THEMES = {
         "entry": "#1f2836", "tree": "#232c3d", "head": "#2b3648", "tab_bg": "#1b2230",
         "btn": "#2e394d", "btn_hover": "#3a4760",
         "status": {"OK": "#2f4d3a", "NOTA": "#4d4526", "SUGERIDO": "#3d3454",
+                   "BALANCEADO": "#244a52",
                    "REVISAR": "#4d3f27", "ELEGIR": "#2a3d52", "NO FACTURAR": "#39414d",
                    "SIN DATO": "#4d2f34"},
     },
@@ -69,6 +71,7 @@ STRINGS = {
         "hours": "h",
         "chk_suggest": "Sugerir driver (el menos ocupado)",
         "chk_spread": "Repartir drivers cuando dos viajeros comparten los mismos",
+        "chk_balance": "Repartir viajes (≈2 por driver)",
         "btn_run": "Procesar",
         "btn_export": "Exportar Excel…",
         "btn_csv": "Guardar reporte (CSV)…",
@@ -91,7 +94,7 @@ STRINGS = {
         "st_idle": "Elige el claim y la carpeta de fuentes, luego Procesar.",
         "st_working": "Procesando…",
         "st_error": "Error",
-        "st_done": ("Listo: {ok} OK, {nota} con nota, {sug} sugerido (confirmar), "
+        "st_done": ("Listo: {ok} OK, {nota} con nota, {sug} sugerido (confirmar), {bal} reasignado (reparto), "
                     "{elegir} por asignar, {nofact} sin facturar, {revisar} por revisar, {sindato} sin datos."),
         "err_claim": "Elige el archivo ClaimInformation (.xlsx).",
         "err_folder": "Elige la carpeta donde están los resúmenes / viajes / drivers.",
@@ -159,6 +162,7 @@ STRINGS = {
         "hours": "h",
         "chk_suggest": "Suggest driver (least busy)",
         "chk_spread": "Split drivers when two members share the same ones",
+        "chk_balance": "Balance trips (~2 per driver)",
         "btn_run": "Process",
         "btn_export": "Export Excel…",
         "btn_csv": "Save report (CSV)…",
@@ -181,7 +185,7 @@ STRINGS = {
         "st_idle": "Pick the claim and the sources folder, then Process.",
         "st_working": "Processing…",
         "st_error": "Error",
-        "st_done": ("Done: {ok} OK, {nota} with note, {sug} suggested (confirm), "
+        "st_done": ("Done: {ok} OK, {nota} with note, {sug} suggested (confirm), {bal} rebalanced, "
                     "{elegir} to assign, {nofact} not billed, {revisar} to review, {sindato} no data."),
         "err_claim": "Pick the ClaimInformation file (.xlsx).",
         "err_folder": "Pick the folder with the resúmenes / trips / drivers.",
@@ -233,6 +237,8 @@ def status_of(row):
     if row.get("driver") and row.get("milage") is not None:
         if flag == "sugerido":
             return "SUGERIDO"
+        if flag == "balanceado":
+            return "BALANCEADO"
         return "NOTA" if flag == "nota" else "OK"
     if flag == "nofacturar":
         return "NO FACTURAR"
@@ -348,6 +354,7 @@ class App:
         self.willcall_var = tk.StringVar(value="2")
         self.suggest_var = tk.BooleanVar(value=True)
         self.spread_var = tk.BooleanVar(value=True)
+        self.balance_var = tk.BooleanVar(value=True)
 
         self._build()
         self._apply_theme()
@@ -413,6 +420,8 @@ class App:
         self.chk_suggest.pack(side="left")
         self.chk_spread = ttk.Checkbutton(opt2, text="", variable=self.spread_var)
         self.chk_spread.pack(side="left", padx=(18, 0))
+        self.chk_balance = ttk.Checkbutton(opt2, text="", variable=self.balance_var)
+        self.chk_balance.pack(side="left", padx=(18, 0))
 
         act = ttk.Frame(body, padding=(4, 2, 4, 8))
         act.pack(fill="x")
@@ -584,8 +593,6 @@ class App:
             self.lang_canvas.create_image(0, 0, anchor="nw", image=flag)
         else:
             _draw_flag(self.lang_canvas, self.lang, th["header"])
-        self.lang_canvas.create_text(58, 15, text=self.lang.upper(), fill=th["header_fg"],
-                                     font=self.font_bold, anchor="e")
         # theme button: crisp sun/moon PNG
         self.theme_canvas.configure(bg=th["header"])
         self.theme_canvas.delete("all")
@@ -637,6 +644,7 @@ class App:
         self.lbl_hours.config(text=self.t("hours"))
         self.chk_suggest.config(text=self.t("chk_suggest"))
         self.chk_spread.config(text=self.t("chk_spread"))
+        self.chk_balance.config(text=self.t("chk_balance"))
         self.btn_run.config(text=self.t("btn_run"))
         self.btn_export.config(text=self.t("btn_export"))
         self.btn_csv.config(text=self.t("btn_csv"))
@@ -723,13 +731,14 @@ class App:
         self.status.config(text=self.t("st_working"), foreground=THEMES[self.theme]["muted"])
         self.txt.delete("1.0", "end")
         args = (claim, folder, drivers, self.driverlogs_var.get().strip() or None,
-                self.strategy_var.get(), delta, self.suggest_var.get(), self.spread_var.get())
+                self.strategy_var.get(), delta, self.suggest_var.get(), self.spread_var.get(),
+                self.balance_var.get())
         threading.Thread(target=self._work, args=args, daemon=True).start()
 
-    def _work(self, claim, folder, drivers, driverlogs, strategy, delta, suggest, spread):
+    def _work(self, claim, folder, drivers, driverlogs, strategy, delta, suggest, spread, balance):
         try:
             res = run_job(claim, folder, drivers_path=drivers, strategy=strategy,
-                          willcall_hours=delta, suggest_driver=suggest, spread=spread,
+                          willcall_hours=delta, suggest_driver=suggest, spread=spread, balance=balance,
                           driverlogs_folder=driverlogs)
         except Exception as e:  # pragma: no cover
             res = {"error": f"{type(e).__name__}: {e}"}
@@ -763,7 +772,7 @@ class App:
                                       if s["trip"] in active]
         self.tree.delete(*self.tree.get_children())
         counts = {"OK": 0, "NOTA": 0, "SUGERIDO": 0, "REVISAR": 0, "ELEGIR": 0,
-                  "NO FACTURAR": 0, "SIN DATO": 0}
+                  "NO FACTURAR": 0, "SIN DATO": 0, "BALANCEADO": 0}
         for row in res["claim"]["rows"]:
             stt = status_of(row)
             pu = row.get("pu")
@@ -788,7 +797,8 @@ class App:
                                + " | ".join(f"{k} {v}" for k, v in counts.items()) + "\n")
         self._populate_assign()
         self.status.config(text=self.t("st_done", ok=counts["OK"], nota=counts["NOTA"],
-                                       sug=counts["SUGERIDO"], elegir=counts["ELEGIR"],
+                                       sug=counts["SUGERIDO"], bal=counts["BALANCEADO"],
+                                       elegir=counts["ELEGIR"],
                                        nofact=counts["NO FACTURAR"], revisar=counts["REVISAR"],
                                        sindato=counts["SIN DATO"]),
                            foreground=THEMES[self.theme]["accent"])

@@ -18,6 +18,7 @@ L = {
         "pu_est": "PU Time estimado (cita - 14min - 1.4×millas)",
         "time_warn": "Avisos de tiempos",
         "milage_trips": "Milage de archivo viajes", "resumen_missing": "(resumen no lo traía)",
+        "balanced": "Reparto de drivers (soft ~2)",
         "suggested": "Driver sugerido", "suggest_note": "(el menos ocupado; confirmar)",
         "not_billed": "Claim sin resumen", "not_billed_note": "(NO facturar salvo Dalia)",
         "no_driver": "Sin driver", "pick_manual": "(elegir manual)",
@@ -44,6 +45,7 @@ L = {
         "pu_est": "Estimated PU Time (appt - 14min - 1.4×miles)",
         "time_warn": "Time warnings",
         "milage_trips": "Milage from trip file", "resumen_missing": "(resumen didn't have it)",
+        "balanced": "Driver rebalancing (soft ~2)",
         "suggested": "Suggested driver", "suggest_note": "(least busy; confirm)",
         "not_billed": "Claim w/o resumen", "not_billed_note": "(do NOT bill unless Dalia)",
         "no_driver": "No driver", "pick_manual": "(pick manually)",
@@ -90,6 +92,8 @@ def report_text(result, lang="es"):
                      + ("(pata B antes que la A)" if lang == "es" else "(B leg before A)"))
     if st.get("milage_from_trips"):
         lines.append(f"  {t['milage_trips']}: {st['milage_from_trips']}  {t['resumen_missing']}")
+    if st.get("balanced"):
+        lines.append(f"  {t['balanced']}: {st['balanced']}")
     if st.get("suggested"):
         lines.append(f"  {t['suggested']}:       {st['suggested']}  {t['suggest_note']}")
     if st.get("not_billed"):
