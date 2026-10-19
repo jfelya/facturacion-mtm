@@ -29,7 +29,8 @@ Facturacion MTM/
 │   ├── writer.py           #   salida EXACTA (una hoja por día, 10 columnas, ordenado por driver)
 │   ├── driverlogs.py       #   llena los driverlogs .docx por driver/día (python-docx)
 │   ├── bulk.py             #   genera el BULK UPLOAD .xlsx por día (plantilla bundleada)
-│   └── ui.py               #   interfaz Tkinter
+│   ├── uikit/              #   design system Tkinter (tokens, tema, iconos, widgets)
+│   └── ui.py               #   interfaz Tkinter (consume uikit)
 │
 ├── data/
 │   ├── base/               # DATOS DE PRODUCCIÓN (el trabajo real)
@@ -123,8 +124,8 @@ python selftest.py                # mide precisión contra septiembre
 ## Portabilidad
 
 El `.exe` de la **raíz** es **standalone / one-file y 32-bit (x86)**: cópialo a cualquier PC con **Windows 10/11 de
-32 o 64 bits** y funciona sin instalar Python ni dependencias. En `dist\` queda la build **64-bit** y en `dist32\` la
-32-bit. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal: Excel + BULK UPLOAD +
+32 o 64 bits** y funciona sin instalar Python ni dependencias. Las builds `dist\` (64-bit) y `dist32\` (32-bit) se
+regeneran al compilar con PyInstaller. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal: Excel + BULK UPLOAD +
 driverlogs OK, salidas idénticas al motor).
 
 **Firma / "Unknown publisher":** el exe está firmado con una cadena propia de **Disma Transportation** (Root CA → Code Signing).

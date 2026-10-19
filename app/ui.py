@@ -14,40 +14,8 @@ from pathlib import Path
 from .pipeline import run_job
 from .report import report_text, write_report_csv
 from .writer import write_output
-
-# ---------------- themes (portable design system: dark-first, flat, 1px borders) ----------------
-# Tokens from VISUAL_DESIGN_SYSTEM.md (SelfishNet v2). Tk approximates it: square corners,
-# flat surfaces, semantic colours. Keys kept from the previous theme dict for compatibility.
-THEMES = {
-    "light": {
-        "bg": "#F3F5F7", "card": "#FFFFFF", "header": "#FFFFFF",
-        "header_fg": "#1F2328", "header_sub": "#5A6572",
-        "accent": "#0969DA", "accent_d": "#2F7FE0", "accent_fg": "#FFFFFF",
-        "accent_dis": "#B7C4D2", "accent_dis_fg": "#F3F5F7",
-        "muted": "#5A6572", "txt": "#1F2328", "border": "#D2D9E0",
-        "entry": "#FFFFFF", "tree": "#FFFFFF", "head": "#ECEFF3", "tab_bg": "#F3F5F7",
-        "btn": "#FFFFFF", "btn_hover": "#ECEFF3", "sel": "#D6E6FA",
-        "success": "#1A7F37", "danger": "#CF222E",
-        "status": {"OK": "#DDF4E0", "NOTA": "#FFF3CD", "SUGERIDO": "#E7DDF7",
-                   "BALANCEADO": "#D7EEF5",
-                   "REVISAR": "#FDE7C7", "ELEGIR": "#D9E7FB", "NO FACTURAR": "#E7E9EC",
-                   "SIN DATO": "#FBDDDD"},
-    },
-    "dark": {
-        "bg": "#14171B", "card": "#1C2128", "header": "#1C2128",
-        "header_fg": "#E6EDF3", "header_sub": "#9AA7B4",
-        "accent": "#4C8DFF", "accent_d": "#6FA3FF", "accent_fg": "#FFFFFF",
-        "accent_dis": "#333B47", "accent_dis_fg": "#9AA7B4",
-        "muted": "#9AA7B4", "txt": "#E6EDF3", "border": "#333B47",
-        "entry": "#1C2128", "tree": "#1C2128", "head": "#262C35", "tab_bg": "#14171B",
-        "btn": "#1C2128", "btn_hover": "#262C35", "sel": "#25344A",
-        "success": "#3FB950", "danger": "#F85149",
-        "status": {"OK": "#183A22", "NOTA": "#3D2E12", "SUGERIDO": "#2C2640",
-                   "BALANCEADO": "#14333B",
-                   "REVISAR": "#3B2E17", "ELEGIR": "#1B2C44", "NO FACTURAR": "#2A2F36",
-                   "SIN DATO": "#3B1F22"},
-    },
-}
+from . import uikit
+from .uikit import THEMES
 
 # ---------------- i18n ----------------
 STRINGS = {
@@ -295,13 +263,6 @@ def _draw_theme_icon(canvas, theme, bg):
         canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill="#f2c14e", outline="")
 
 
-def _pick_family(cands, available):
-    for c in cands:
-        if c in available:
-            return c
-    return "TkDefaultFont"
-
-
 def _init_dpi():
     try:
         import ctypes
@@ -340,16 +301,13 @@ class App:
         root.geometry("1180x790")
         root.minsize(1020, 640)
 
-        fams = set(tkfont.families())
-        # Design system uses "Segoe UI Variable Text @ Medium"; Tk has only normal/bold,
-        # so use the Semibold face as the base weight to get that slightly-bolder look.
-        self.fam = _pick_family(["Segoe UI Semibold", "Segoe UI Variable Text", "Segoe UI", "Arial"], fams)
-        fam_r = _pick_family(["Segoe UI Semibold", "Segoe UI", "Arial"], fams)
-        self.font = (self.fam, -13)          # 13 px base (design system)
-        self.font_bold = (self.fam, -13, "bold")
-        self.font_title = (self.fam, -17, "bold")
-        self.font_small = (fam_r, -11)
-        self.font_mono = ("Consolas", -12)
+        self.fonts = uikit.make_fonts(root)
+        self.fam = self.fonts.family
+        self.font = self.fonts.base
+        self.font_bold = self.fonts.bold
+        self.font_title = self.fonts.title
+        self.font_small = self.fonts.small
+        self.font_mono = self.fonts.mono
 
         self.claim_var = tk.StringVar()
         self.folder_var = tk.StringVar()
@@ -534,76 +492,9 @@ class App:
             self._render()
 
     def _apply_theme(self):
-        th = THEMES[self.theme]
-        style = ttk.Style(self.root)
-        try:
-            style.theme_use("clam")
-        except Exception:
-            pass
-        self.root.configure(bg=th["bg"])
-        self.root.option_add("*Font", self.font)
-        style.configure(".", background=th["bg"], foreground=th["txt"], font=self.font,
-                        bordercolor=th["border"], focuscolor=th["accent"], borderwidth=0)
-        style.configure("TFrame", background=th["bg"], borderwidth=0)
-        style.configure("Card.TFrame", background=th["card"], borderwidth=1, relief="solid",
-                        bordercolor=th["border"])
-        style.configure("Header.TFrame", background=th["header"], borderwidth=0)
-        style.configure("TLabel", background=th["bg"], foreground=th["txt"], font=self.font)
-        style.configure("Card.TLabel", background=th["card"], foreground=th["txt"], font=self.font)
-        style.configure("Bold.TLabel", background=th["card"], foreground=th["txt"], font=self.font_bold)
-        style.configure("Hint.TLabel", background=th["card"], foreground=th["muted"], font=self.font_small)
-        style.configure("Header.TLabel", background=th["header"], foreground=th["header_fg"],
-                        font=self.font_title)
-        style.configure("HeaderSub.TLabel", background=th["header"], foreground=th["header_sub"],
-                        font=self.font_small)
-        style.configure("Status.TLabel", background=th["header"], foreground=th["muted"], font=self.font_small)
-        # base button: surface + 1px border; hover tint + accent border (design system §6.1)
-        style.configure("TButton", font=self.font, padding=(14, 7), background=th["btn"],
-                        foreground=th["txt"], bordercolor=th["border"], borderwidth=1,
-                        relief="flat", focuscolor=th["card"])
-        style.map("TButton",
-                  background=[("active", th["btn_hover"]), ("pressed", th["sel"])],
-                  bordercolor=[("active", th["accent"])],
-                  foreground=[("disabled", th["muted"])])
-        style.configure("Accent.TButton", font=self.font_bold, padding=(16, 7),
-                        background=th["accent"], foreground=th["accent_fg"],
-                        bordercolor=th["accent"], borderwidth=1, relief="flat")
-        style.map("Accent.TButton",
-                  background=[("active", th["accent_d"]), ("pressed", th["accent"]),
-                              ("disabled", th["accent_dis"])],
-                  bordercolor=[("disabled", th["accent_dis"])],
-                  foreground=[("disabled", th["accent_dis_fg"])])
-        style.configure("TEntry", padding=(6, 3), fieldbackground=th["entry"], foreground=th["txt"],
-                        insertcolor=th["txt"], bordercolor=th["border"], borderwidth=1)
-        style.map("TEntry", bordercolor=[("focus", th["accent"])])
-        style.configure("TCombobox", fieldbackground=th["entry"], background=th["entry"],
-                        foreground=th["txt"], arrowcolor=th["muted"], bordercolor=th["border"],
-                        borderwidth=1, padding=(6, 3))
-        style.map("TCombobox", fieldbackground=[("readonly", th["entry"])],
-                  foreground=[("readonly", th["txt"])])
-        style.configure("TSpinbox", fieldbackground=th["entry"], foreground=th["txt"],
-                        arrowcolor=th["muted"], insertcolor=th["txt"], bordercolor=th["border"])
-        style.configure("TNotebook", background=th["bg"], borderwidth=0, tabmargins=(6, 6, 6, 0))
-        style.configure("TNotebook.Tab", font=self.font, padding=(14, 8),
-                        background=th["tab_bg"], foreground=th["muted"])
-        style.map("TNotebook.Tab", background=[("selected", th["card"])],
-                  foreground=[("selected", th["accent"])])
-        style.configure("Treeview", font=self.font_small, rowheight=30,
-                        background=th["tree"], fieldbackground=th["tree"], foreground=th["txt"],
-                        bordercolor=th["border"], borderwidth=1, relief="flat")
-        style.configure("Treeview.Heading", font=self.font_bold, background=th["head"],
-                        foreground=th["muted"], relief="flat", padding=(10, 8))
-        style.map("Treeview", background=[("selected", th["sel"])],
-                  foreground=[("selected", th["txt"])])
-        style.map("Treeview.Heading", background=[("active", th["head"])])
-        style.configure("TRadiobutton", background=th["card"], foreground=th["txt"], font=self.font)
-        style.map("TRadiobutton", background=[("active", th["card"])])
-        style.configure("TCheckbutton", background=th["card"], foreground=th["txt"], font=self.font)
-        style.map("TCheckbutton", background=[("active", th["card"])])
-
+        th = uikit.apply_theme(self.root, self.theme, self.fonts)
         self.txt.configure(bg=th["tree"], fg=th["txt"], insertbackground=th["txt"])
-        for name, col in th["status"].items():
-            self.tree.tag_configure(name, background=col, foreground=th["txt"])
+        uikit.tag_rows(self.tree, self.theme)
         # 1-px separators (toolbar bottom / status top)
         if hasattr(self, "hline"):
             self.hline.configure(bg=th["border"])
@@ -627,17 +518,7 @@ class App:
             self.theme_lbl.configure(image=icon, bg=th["header"])
 
     def _img(self, name):
-        """Load+cache a UI PNG from assets/ui (works in dev and inside the one-file exe)."""
-        if name not in self._imgs:
-            import sys
-            base = getattr(sys, "_MEIPASS", None)
-            p = ((Path(base) / "assets" / "ui" / f"{name}.png") if base else
-                 (Path(__file__).resolve().parents[1] / "assets" / "ui" / f"{name}.png"))
-            try:
-                self._imgs[name] = tk.PhotoImage(file=str(p))
-            except Exception:
-                self._imgs[name] = None
-        return self._imgs[name]
+        return uikit.load_icon(self.root, name, self._imgs)
 
     # ---------------- i18n ----------------
     def t(self, key, **kw):
