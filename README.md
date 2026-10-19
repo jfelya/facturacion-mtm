@@ -46,7 +46,6 @@ Facturacion MTM/
 ├── docs/
 │   └── NOTES.md            # handoff completo del proyecto
 │
-├── Entrega/                # ← LO QUE SE COPIA A OTRA PC: el .exe + LEEME
 ├── dist/                   # (se genera al compilar con PyInstaller) build 64-bit
 ├── dist32/                 # (se genera al compilar con PyInstaller) build 32-bit
 └── build/                  # (se genera al compilar) artefactos temporales de PyInstaller
@@ -129,8 +128,8 @@ regeneran al compilar con PyInstaller. Ver `docs/PORTABILITY.md` (verificado cop
 driverlogs OK, salidas idénticas al motor).
 
 **Firma digital:** por ahora el `.exe` va **sin firmar**. Windows puede mostrar "Unknown publisher" la primera vez →
-*Más información → Ejecutar de todas formas*. La carpeta **`Entrega\`** es lo que se copia a otra PC: el `.exe` +
-`LEEME PRIMERO.txt`. La firma de código queda **pendiente** (ver `docs/NOTES.md` §16).
+*Más información → Ejecutar de todas formas*. Para usarlo en otra PC, copia **`Facturacion MTM.exe`**. La firma de
+código queda **pendiente** (ver `docs/NOTES.md` §16).
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
 (las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.
