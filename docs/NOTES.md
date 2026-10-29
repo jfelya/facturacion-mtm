@@ -27,7 +27,8 @@ The user reviews the preview, confirms suggested drivers, and uploads the output
 ## 3. Environment
 
 - Windows 10/11. The root `Facturacion MTM.exe` is a **32-bit one-file** build (runs on 32- and
-  64-bit Windows). A 64-bit build is optional and kept in `dist\` when built.
+  64-bit Windows), version **2.4.0.0** (rebuilt 2026-10-28). A 64-bit build is optional and kept in
+  `dist\` when built.
 - Python 3.14.6 on this machine:
   `C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe`.
 - Runtime: `openpyxl==3.1.5`, `python-docx==1.2.0`, Tkinter (stdlib).

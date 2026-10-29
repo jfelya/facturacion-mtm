@@ -1,7 +1,8 @@
 # Portability / Standalone Audit — `Facturacion MTM.exe`
 
-> **2026-10-28 note:** this audit describes the 2.3.0.0 artifacts. The revamped source is version
-> 2.4.0.0; rebuild with `build.ps1`. The root EXE remains the 2.3.0.0 build until that rebuild.
+> **2026-10-28 note:** the root EXE was rebuilt as **32-bit · v2.4.0.0** (16,595,921 bytes) and verified
+> against the engine: Excel, 9 BULK files and 36 driverlogs all matched with **0 differences**. The
+> 2.3.0.0 measurements below are the historical audit; the build toolchain is the same 32-bit one.
 
 **Date:** 18-oct-2026
 **Auditor:** automated subagent (OpenCode)

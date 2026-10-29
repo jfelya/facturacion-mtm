@@ -148,8 +148,9 @@ driverlogs OK, salidas idénticas al motor).
 *Más información → Ejecutar de todas formas*. Para usarlo en otra PC, copia **`Facturacion MTM.exe`**. La firma de
 código queda **pendiente** (ver `docs/HISTORY.md`).
 
-> **Importante:** el exe de la raíz es un artefacto de build y queda **anterior al revamp** hasta que se recompile
-> con `.\build.ps1` en una máquina con el Python 32-bit. El motor Python ya incluye todos los cambios.
+> **Importante:** el exe de la raíz fue **recompilado el 28-oct-2026** como **32-bit · v2.4.0.0** y verificado
+> con el batch de octubre: Excel, 9 BULK y 36 driverlogs **idénticos al motor** (0 diferencias). Si cambias código,
+> vuelve a ejecutar `.\build.ps1`.
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
 (las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.
