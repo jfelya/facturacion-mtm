@@ -89,8 +89,8 @@ cualquier chat futuro tenga acceso.
 > `assets/ui/make_icons.py`). Un clic en cada uno y listo.
 >
 > **PU Time / DropOff Time:** el archivo de viajes trae la hora de la **cita** (dropoff), no la recogida. El app
-> **estima** el pickup con `cita − (14 min + 1.4×millas) ± 3 min` y el **DropOff** unos minutos antes de la cita,
-> calibrado con los datos históricos (ver `docs/PU_TIME_FINDINGS.md`).
+> fija el **DropOff** 1–5 min antes de la cita y estima el pickup con `DropOff − (14 min + 1.4×millas ± 3 min)`,
+> calibrado con los datos históricos (ver `docs/PU_TIME_FINDINGS.md` y `tests/test_pickup.py`).
 >
 > **Drivers:** por defecto el app asigna **un driver por pata** según el resumen (opción **"Uno por pata"**). Si quieres
 > el **mismo driver en ambas** patas, elige esa opción en la UI o usa `--strategy pair`. Dalia siempre prefiere 349.

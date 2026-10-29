@@ -107,8 +107,8 @@ STRINGS = {
             "• El app detecta cada archivo por su ESTRUCTURA, no por el nombre: puedes renombrarlos.\n"
             "• Nunca modifica los originales: siempre escribe un archivo nuevo.\n"
             "• Al llegar archivos nuevos, ponlos en la carpeta del proyecto (data/base).\n"
-            "• El PU Time se ESTIMA desde la hora de la CITA del archivo de viajes\n"
-            "   (cita − 14 min − 1.4×millas, con ±3 min de variación para que se vea natural).\n"
+            "• El DropOff queda 1–5 min antes de la CITA del archivo de viajes; el PU Time se estima\n"
+            "   (DropOff − 14 min − 1.4×millas, con ±3 min de variación para que se vea natural).\n"
             "• La salida queda en UNA HOJA POR DÍA (10-05, 10-06, …)."),
     },
     "en": {
@@ -199,8 +199,8 @@ STRINGS = {
             "• The app detects each file by its STRUCTURE, not its name: you can rename them.\n"
             "• It never modifies the originals: it always writes a new file.\n"
             "• When new files arrive, put them in the project folder (data/base).\n"
-            "• PU Time is ESTIMATED from the trip file's APPOINTMENT time\n"
-            "   (appt − 14 min − 1.4×miles, with ±3 min variation so it looks natural).\n"
+            "• DropOff lands 1–5 min before the trip file's APPOINTMENT; PU Time is estimated\n"
+            "   (DropOff − 14 min − 1.4×miles, with ±3 min variation so it looks natural).\n"
             "• The output is ONE SHEET PER DAY (10-05, 10-06, …)."),
     },
 }
