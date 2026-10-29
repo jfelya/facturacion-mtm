@@ -4,7 +4,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from app.pipeline import run_job
+from app.pipeline import run_job, scan_sources
 from app.writer import HEADERS, write_output
 from tests.fixtures import make_claim, make_drivers, make_resumen, make_trips
 
@@ -79,6 +79,13 @@ class PipelineSmokeTests(unittest.TestCase):
             self.assertIsNotNone(row["pu"])
             self.assertIsNotNone(row["dropoff"])
             self.assertLess(row["pu"], row["dropoff"])
+
+            drivers_file = sources / "Informacion de Drivers.xlsx"
+            src = scan_sources(sources, drivers_file)
+            res2 = run_job(claim_path, sources, drivers_path=drivers_file, sources=src)
+            self.assertEqual(res["report"]["stats"], res2["report"]["stats"])
+            self.assertEqual([r["trip"] for r in res["claim"]["rows"]],
+                             [r["trip"] for r in res2["claim"]["rows"]])
 
             out = root / "out.xlsx"
             info = write_output(res["claim"], out)

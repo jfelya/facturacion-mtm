@@ -392,13 +392,15 @@ class App:
             return
         drivers = self.drivers_var.get().strip() or None
         # warn if the sources folder has no trip files (PU/DropOff/Dalia-Milage would be empty)
+        sources = None
         try:
             from .pipeline import scan_sources
-            if not scan_sources(folder, drivers).get("trips"):
+            sources = scan_sources(folder, drivers)
+            if not sources.get("trips"):
                 if not messagebox.askokcancel(self.t("notrips_title"), self.t("notrips_body")):
                     return
         except Exception:
-            pass
+            sources = None
         try:
             delta = float(self.willcall_var.get())
         except ValueError:
@@ -413,14 +415,15 @@ class App:
         self.txt.delete("1.0", "end")
         args = (claim, folder, drivers, self.driverlogs_var.get().strip() or None,
                 self.strategy_var.get(), delta, self.suggest_var.get(), self.spread_var.get(),
-                self.balance_var.get())
+                self.balance_var.get(), sources)
         threading.Thread(target=self._work, args=args, daemon=True).start()
 
-    def _work(self, claim, folder, drivers, driverlogs, strategy, delta, suggest, spread, balance):
+    def _work(self, claim, folder, drivers, driverlogs, strategy, delta, suggest, spread, balance,
+              sources=None):
         try:
             res = run_job(claim, folder, drivers_path=drivers, strategy=strategy,
                           willcall_hours=delta, suggest_driver=suggest, spread=spread, balance=balance,
-                          driverlogs_folder=driverlogs)
+                          driverlogs_folder=driverlogs, sources=sources)
         except Exception as e:  # pragma: no cover
             res = {"error": f"{type(e).__name__}: {e}"}
         self.root.after(0, lambda: self._finish(res))

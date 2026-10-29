@@ -169,7 +169,8 @@ def build_trips(files, claim, warnings):
 
 def run_job(claim_path, sources_folder, drivers_path=None, strategy="first_row_B",
             willcall_hours=2.0, suggest_driver=True, sort_by_date=True, spread=True, balance=True,
-            pickup_ratio=1.4, pickup_buffer=14, pickup_jitter=3, driverlogs_folder=None):
+            pickup_ratio=1.4, pickup_buffer=14, pickup_jitter=3, driverlogs_folder=None,
+            sources=None):
     """Full pipeline. Returns {'claim', 'report', 'sources', 'claim_path'} or {'error'}."""
     claim_path = Path(claim_path)
     try:
@@ -180,7 +181,7 @@ def run_job(claim_path, sources_folder, drivers_path=None, strategy="first_row_B
         return {"error": f"El archivo no parece un ClaimInformation con filas: {claim_path.name}"}
 
     warnings = []
-    src = scan_sources(sources_folder, drivers_path)
+    src = sources if sources is not None else scan_sources(sources_folder, drivers_path)
     driver_usage = {}
     resumen_index = build_resumen_index(src["resumen"], warnings, driver_usage)
     trips_by_date = build_trips(src["trips"], claim, warnings)
