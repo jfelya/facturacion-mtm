@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from .parsers import classify, parse_claim, parse_resumen, parse_trips, parse_drivers
 from .filler import fill_claim
+from .common import numeric_key
 
 
 def _iter_xlsx(folder):
@@ -39,10 +40,6 @@ def scan_driverlogs(folder):
         if m:
             nums.add(m.group(1))
     return nums
-
-
-def _numsort(n):
-    return (0, int(n)) if str(n).isdigit() else (1, str(n))
 
 
 def scan_sources(folder, drivers_path=None):
@@ -202,7 +199,7 @@ def run_job(claim_path, sources_folder, drivers_path=None, strategy="first_row_B
         if driverlogs_folder:
             tpl = scan_driverlogs(driverlogs_folder)
             if tpl:
-                missing = sorted(allowed - tpl, key=_numsort)
+                missing = sorted(allowed - tpl, key=numeric_key)
                 if missing:
                     warnings.append("Drivers en la lista pero SIN plantilla de driverlog "
                                     "(se reemplazarán por uno libre que sí tenga): "

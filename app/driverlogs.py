@@ -13,8 +13,9 @@ Rules (confirmed by the user, NOTES §15):
 import re
 from pathlib import Path
 
+from .common import day_name, numeric_key
+
 _HEADER_COLS = 8   # first 8 cells carry the data (there is a trailing empty cell)
-MAX_TRIPS = 14     # data rows in the template (only grows if a driver ever exceeds it)
 
 
 def scan_templates(folder):
@@ -30,15 +31,6 @@ def scan_templates(folder):
         if m:
             out.setdefault(m.group(1), f)
     return out
-
-
-def day_name(iso):
-    """'2026-10-05' -> '10-05'."""
-    try:
-        _y, m, d = str(iso).split("-")
-        return f"{m}-{d}"
-    except Exception:
-        return str(iso)
 
 
 def _hhmm(v):
@@ -136,7 +128,7 @@ def generate_driverlogs(rows, templates_folder, days_root, only_days=None):
                 by_drv.setdefault(drv, []).append(r)
         docs_dir = Path(days_root) / day / "Docs"
         made = 0
-        for drv in sorted(by_drv, key=lambda x: (len(x), x)):
+        for drv in sorted(by_drv, key=numeric_key):
             template = tpl.get(drv)
             if not template:
                 skipped.append((day, drv))
@@ -150,7 +142,7 @@ def generate_driverlogs(rows, templates_folder, days_root, only_days=None):
                 made += 1
             except Exception as e:                       # noqa: BLE001
                 errors.append(f"{day} {drv}: {type(e).__name__}: {e}")
-        days[day] = {"docs": made, "drivers": sorted(by_drv, key=lambda x: (len(x), x))}
+        days[day] = {"docs": made, "drivers": sorted(by_drv, key=numeric_key)}
 
     return {"created": created, "skipped": skipped, "errors": errors, "days": days,
             "templates": len(tpl), "billed_skipped": billed_skipped}
@@ -171,6 +163,9 @@ def report_lines(res, lang="es"):
     if res.get("skipped"):
         L.append(("  Sin plantilla (omitidos): " if es else "  No template (skipped): ")
                  + ", ".join(f"{d} {n}" for d, n in res["skipped"]))
+    if res.get("billed_skipped"):
+        L.append((f"  Ya facturado (omitidos): {res['billed_skipped']}"
+                  if es else f"  Already billed (skipped): {res['billed_skipped']}"))
     for e in res.get("errors", []):
         L.append(("  ERROR: " if es else "  ERROR: ") + e)
     return "\n".join(L)

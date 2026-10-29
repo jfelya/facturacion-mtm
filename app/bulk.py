@@ -40,8 +40,10 @@ identical. The template file is NEVER modified.
 import random
 import sys
 import zlib
-from datetime import date, datetime, time as dtime, timedelta
+from datetime import datetime, time as dtime
 from pathlib import Path
+
+from .common import add_minutes, day_name
 
 SHEET = "Export Trip"
 HEADERS = [
@@ -69,15 +71,6 @@ def template_path():
     return _asset_path("bulk_template.xlsx")
 
 
-def day_name(iso):
-    """'2026-10-05' -> '10-05'."""
-    try:
-        _y, m, d = str(iso).split("-")
-        return f"{m}-{d}"
-    except Exception:
-        return str(iso)
-
-
 def bulk_filename(iso):
     """'2026-10-05' -> 'BULK UPLOAD 10-05-2026.xlsx'."""
     try:
@@ -100,10 +93,6 @@ def _as_time(v):
         except Exception:
             return None
     return None
-
-
-def _add(t, minutes):
-    return (datetime.combine(date(2000, 1, 1), t) + timedelta(minutes=minutes)).time()
 
 
 def _mins(t):
@@ -154,23 +143,18 @@ def _base_sim(row):
     arrive_pu = perform_pu = arrive_drop = perform_drop = None
     if pu:
         pu = pu.replace(second=0, microsecond=0)
-        arrive_pu = _add(pu, -rng.randint(lo, hi))
-        perform_pu = _add(arrive_pu, 1)
+        arrive_pu = add_minutes(pu, -rng.randint(lo, hi))
+        perform_pu = add_minutes(arrive_pu, 1)
     if drop:
         drop = drop.replace(second=0, microsecond=0)
         # the scheduled drop-off is the LATEST we may be there -> arrive a couple of min early
-        arrive_drop = _add(drop, -rng.randint(1, 3))
+        arrive_drop = add_minutes(drop, -rng.randint(1, 3))
         perform_drop = arrive_drop
     # the patient cannot get out before he/she got in
     if perform_pu and arrive_drop and _mins(arrive_drop) <= _mins(perform_pu):
-        arrive_drop = _add(perform_pu, rng.randint(4, 12))
+        arrive_drop = add_minutes(perform_pu, rng.randint(4, 12))
         perform_drop = arrive_drop
     return [arrive_pu, perform_pu, arrive_drop, perform_drop]
-
-
-def sim_times(row):
-    """Single-trip simulated times (no A/B context). Tuple for convenience."""
-    return tuple(_base_sim(row))
 
 
 def day_sims(rows):
@@ -194,9 +178,9 @@ def day_sims(rows):
         a_out = a[3] or a[2]                      # A leg: member got out
         if a_out and sims[i][0] and _mins(sims[i][0]) < _mins(a_out):
             sims[i][0] = a_out                    # B driver only arrives after dropping off
-            sims[i][1] = _add(a_out, 1)
+            sims[i][1] = add_minutes(a_out, 1)
             if sims[i][3] and _mins(sims[i][3]) < _mins(sims[i][1]):
-                sims[i][3] = _add(sims[i][1], 4)
+                sims[i][3] = add_minutes(sims[i][1], 4)
                 sims[i][2] = sims[i][3]
     return sims
 
@@ -319,8 +303,8 @@ def report_lines(res, lang="es"):
         info = res["days"][d]
         L.append(f"    {d}: {info['rows']} fila(s) -> {Path(info['file']).name}")
     if res.get("excluded"):
-        L.append((f"  Filas no incluidas (sin driver / no facturar): {len(res['excluded'])}"
-                  if es else f"  Rows not included (no driver / not billed): {len(res['excluded'])}"))
+        L.append((f"  Filas no incluidas (sin driver / no facturar / ya facturado): {len(res['excluded'])}"
+                  if es else f"  Rows not included (no driver / not billed / already billed): {len(res['excluded'])}"))
     for e in res.get("errors", []):
         L.append("  ERROR: " + e)
     return "\n".join(L)

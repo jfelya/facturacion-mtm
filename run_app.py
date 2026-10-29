@@ -12,7 +12,6 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 import sys
-from pathlib import Path
 
 
 def main_cli(args):

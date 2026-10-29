@@ -1,6 +1,6 @@
 """Shared helpers: normalization and safe xlsx reading."""
 import re
-from datetime import datetime, date, time as dtime
+from datetime import datetime, date, time as dtime, timedelta
 from openpyxl import load_workbook
 
 
@@ -42,6 +42,37 @@ def read_rows(path, sheet=None):
         return rows, ws.title, list(wb.sheetnames)
     finally:
         wb.close()
+
+
+def read_header(path):
+    """Return the first row and sheet names only; cheaper than read_rows."""
+    wb = load_workbook(path, read_only=True, data_only=True)
+    try:
+        ws = wb.worksheets[0]
+        row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), ())
+        return list(row), list(wb.sheetnames)
+    finally:
+        wb.close()
+
+
+def day_name(iso):
+    """'2026-10-05' -> '10-05'; invalid input keeps the writer's old 'Hoja1'."""
+    try:
+        _y, m, d = str(iso).split("-")
+        return f"{m}-{d}"
+    except Exception:
+        return "Hoja1"
+
+
+def add_minutes(t, minutes):
+    """Add minutes to a datetime.time, wrapping across midnight."""
+    return (datetime.combine(date(2000, 1, 1), t) + timedelta(minutes=minutes)).time()
+
+
+def numeric_key(value):
+    """Sort numeric driver numbers first, then text."""
+    t = str(value)
+    return (0, int(t)) if t.isdigit() else (1, t)
 
 
 def norm_name(*parts):

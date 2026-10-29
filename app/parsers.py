@@ -8,7 +8,7 @@ Types:
 """
 import re
 from .common import (
-    s, nonempty, read_rows, norm_name, norm_num, to_iso, to_float,
+    s, nonempty, read_rows, read_header, norm_name, norm_num, to_iso, to_float,
     parse_time_value, fmt_mdy, note_kind,
 )
 
@@ -16,12 +16,12 @@ from .common import (
 # ---------- classification ----------
 def classify(path):
     try:
-        rows, title, sheets = read_rows(path)
+        header, sheets = read_header(path)
     except Exception:
         return None
-    if not rows:
+    if not header:
         return None
-    hdr = [s(c) for c in rows[0]]
+    hdr = [s(c) for c in header]
     hs = set(hdr)
     if "Vehiculos" in sheets or ({"LICENSE NUMBER", "NUMERO"} <= hs):
         return "drivers"
@@ -61,7 +61,6 @@ def parse_claim(path):
     i_vin = idx("VIN")
     i_pc = idx("Provider Cost")
     i_cost = idx("Cost")
-    layout = "OLD" if "Claim Status" in hdr else "NEW"
 
     out = []
     for rn, r in enumerate(rows[1:], start=2):
@@ -98,7 +97,7 @@ def parse_claim(path):
             "vin": s(r[i_vin]) if i_vin is not None and i_vin < len(r) else "",
             "cost": cost,
         })
-    return {"path": str(path), "layout": layout, "rows": out}
+    return {"path": str(path), "rows": out}
 
 
 # ---------- resumen ----------

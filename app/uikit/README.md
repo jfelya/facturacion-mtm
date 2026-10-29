@@ -10,7 +10,7 @@ these tokens/styles — never hardcode colours or font sizes locally.
 
 | File | Purpose |
 |---|---|
-| `tokens.py` | colours (dark/light), status tints, type scale, spacing, radii, metrics |
+| `tokens.py` | colours (dark/light), status tints, type scale, metrics |
 | `theme.py` | `make_fonts()`, `apply_theme()`, `tag_rows()`, resolved `THEMES` |
 | `icons.py` | `asset_path()`, `load_icon()` (dev + one-file exe) |
 | `widgets.py` | `hseparator()`, `StatusDot` |

@@ -15,11 +15,11 @@ Filling per member+date group:
 
 Nothing is guessed silently: gaps and judgment calls go to report['warnings'] / report['review'].
 """
-from datetime import timedelta, datetime, date
+from datetime import timedelta
 import re
 import random
 import zlib
-from .common import note_kind
+from .common import add_minutes, note_kind, numeric_key
 
 # placeholder / non-real driver numbers in Informacion de Drivers.xlsx
 PLACEHOLDER_DRIVERS = {"999"}
@@ -68,10 +68,6 @@ def _halve_if_doubled(res):
     return res
 
 
-def _add_delta(t, delta):
-    return (datetime.combine(date(2000, 1, 1), t) + delta).time()
-
-
 def _trip_seed(row):
     """Stable seed so the jitter is the same every run (idempotent) but varies per trip."""
     return zlib.crc32(f"{row.get('date', '')}|{row.get('trip', '')}".encode("utf-8"))
@@ -82,20 +78,9 @@ def _lead(miles, rng, ratio=PICKUP_RATIO, buffer=PICKUP_BUFFER, jitter=PICKUP_JI
     return int(round(buffer + ratio * (miles or 0.0) + rng.uniform(-jitter, jitter)))
 
 
-def _est_pickup(appt, miles, seed, ratio=PICKUP_RATIO, buffer=PICKUP_BUFFER, jitter=PICKUP_JITTER):
-    """Estimated pickup = appointment - (buffer + ratio*miles) with a small jitter (whole minutes)."""
-    rng = random.Random(seed)
-    base = appt.replace(second=0, microsecond=0)
-    return _add_delta(base, -timedelta(minutes=_lead(miles, rng, ratio, buffer, jitter)))
-
-
 def _note_driver(note):
     m = re.search(r"auto\s*(\d+)", note or "", re.I)
     return m.group(1) if m else ""
-
-
-def _drv_sort(n):
-    return (0, int(n)) if str(n).isdigit() else (1, str(n))
 
 
 def _assign(row, x, drivers, warnings, review, stats, billed):
@@ -214,14 +199,14 @@ def _balance_drivers(claim, drivers, stats, review):
         while progress:
             progress = False
             over = sorted((d for d, c in counts.items() if c > BALANCE_MAX),
-                          key=lambda d: (-counts[d], _drv_sort(d)))
+                          key=lambda d: (-counts[d], numeric_key(d)))
             for src in over:
                 sc = county(src)
                 receivers = [n for n in approved
                              if n != src and county(n) == sc and counts.get(n, 0) < BALANCE_TARGET]
                 if not receivers:
                     continue
-                dst = min(receivers, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
+                dst = min(receivers, key=lambda n: (counts.get(n, 0), numeric_key(n)))
                 src_rows = [r for r in rows if r.get("driver") == src and _can_balance(r)]
                 if not src_rows:
                     review.append(f"REPARTO BLOQUEADO {date} {src}: {counts[src]} viajes, "
@@ -290,7 +275,7 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             for key, members in by_key.items():
                 if len(members) < 2:
                     continue
-                order = sorted(key, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
+                order = sorted(key, key=lambda n: (counts.get(n, 0), numeric_key(n)))
                 for i, member in enumerate(members):
                     pair_override[(date, member)] = order[i % len(order)]
                 stats["spread"] += 1
@@ -390,8 +375,8 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             rng = random.Random(_trip_seed(row))
             lead = _lead(row.get("milage"), rng, pickup_ratio, pickup_buffer, pickup_jitter)
             margin = rng.randint(1, 5)          # dropoff lands a little before the appointment
-            row["dropoff"] = _add_delta(appt, -timedelta(minutes=margin))
-            row["pu"] = _add_delta(row["dropoff"], -timedelta(minutes=lead))
+            row["dropoff"] = add_minutes(appt, -margin)
+            row["pu"] = add_minutes(row["dropoff"], -lead)
             row["pu_appt"] = appt
             stats["pu_filled"] += 1
             stats["pu_estimated"] += 1
@@ -400,12 +385,13 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             partner = row["trip"][:-1] + "A"
             prec = next((t for t in trips if t["trip"].upper() == partner.upper()), None)
             if prec and prec["time_kind"] == "time":
-                wc = _add_delta(prec["time"].replace(second=0, microsecond=0), willcall_delta)
+                wc = add_minutes(prec["time"].replace(second=0, microsecond=0),
+                                 willcall_delta.total_seconds() / 60)
                 rng = random.Random(_trip_seed(row))
                 off = rng.randint(1, 3)
                 lead = _lead(row.get("milage"), rng, pickup_ratio, pickup_buffer, pickup_jitter)
-                row["pu"] = _add_delta(wc, -timedelta(minutes=off))
-                row["dropoff"] = _add_delta(row["pu"], timedelta(minutes=lead))
+                row["pu"] = add_minutes(wc, -off)
+                row["dropoff"] = add_minutes(row["pu"], lead)
                 row["pu_appt"] = wc
                 stats["pu_filled"] += 1
                 stats["pu_willcall"] += 1
@@ -473,13 +459,13 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
 
     if needs and drivers:
         allowed = _allowed_drivers(drivers)
-        approved = [n for n in sorted(allowed, key=_drv_sort) if n not in PLACEHOLDER_DRIVERS]
+        approved = [n for n in sorted(allowed, key=numeric_key) if n not in PLACEHOLDER_DRIVERS]
         for d in sorted({r["date"] for r in needs}):
             counts = ((driver_usage or {}).get(d) or {}).get("count", {})
             for county in sorted({r.get("county") or "" for r in needs if r["date"] == d}):
                 pool = [n for n in approved
                         if not county or (drivers["table"].get(n, {}).get("county") or "") == county]
-                ranked = sorted(pool, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
+                ranked = sorted(pool, key=lambda n: (counts.get(n, 0), numeric_key(n)))
                 driver_candidates[(d, county)] = [
                     {"num": n, "name": drivers["table"][n]["name"],
                      "count": counts.get(n, 0), "free": counts.get(n, 0) == 0}
@@ -503,7 +489,7 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
         # then fewest trips. All candidates are already limited to the trip's county.
         if pref:
             cands.sort(key=lambda c: (0 if c["count"] == 0 else 1, 0 if c["num"] == pref else 1,
-                                      c["count"], _drv_sort(c["num"])))
+                                      c["count"], numeric_key(c["num"])))
         best = cands[0] if cands else None
         # only suggest when we actually know that day's workload (a resumen exists for it)
         have_info = driver_usage is not None and r["date"] in driver_usage

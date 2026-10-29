@@ -10,19 +10,12 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
+from .common import day_name
+
 HEADERS = ["Driver", "License", "VIN", "Appt. Date", "Trip Number", "Member Info",
            "PU Time", "DropOff Time", "Milage", "Cost"]
 
 WIDTHS = (9, 22, 20, 15, 12, 26, 9, 12, 9, 10)
-
-
-def _sheet_name(date_iso):
-    """'2026-10-05' -> '10-05' (Excel sheet names can't contain '/')."""
-    try:
-        _y, m, d = str(date_iso).split("-")
-        return f"{m}-{d}"
-    except Exception:
-        return "Hoja1"
 
 
 def _write_sheet(ws, rows):
@@ -91,7 +84,7 @@ def write_output(claim, path, per_day=True):
         for r in rows:
             groups.setdefault(r.get("date") or "", []).append(r)
         for date in sorted(groups):
-            _write_sheet(wb.create_sheet(_sheet_name(date)), groups[date])
+            _write_sheet(wb.create_sheet(day_name(date)), groups[date])
         wb.remove(default)
     else:
         default.title = "ClaimInformation"

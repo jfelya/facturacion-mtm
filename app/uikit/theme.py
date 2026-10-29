@@ -13,7 +13,7 @@ from types import SimpleNamespace
 import tkinter.font as tkfont
 from tkinter import ttk
 
-from .tokens import PALETTES, STATUS_TINTS, FONT_FAMILY, FONT_MONO, FONT_SIZE
+from .tokens import PALETTES, STATUS_TINTS, FONT_FAMILY, FONT_MONO, FONT_SIZE, METRICS
 
 
 def _resolve(tokens, theme):
@@ -137,7 +137,7 @@ def apply_theme(root, theme="dark", fonts=None):
     style.map("TNotebook.Tab", background=[("selected", th["card"])],
               foreground=[("selected", th["accent"])])
 
-    style.configure("Treeview", font=fonts.small, rowheight=30,
+    style.configure("Treeview", font=fonts.small, rowheight=METRICS["row_height"],
                     background=th["tree"], fieldbackground=th["tree"], foreground=th["txt"],
                     bordercolor=th["border"], borderwidth=1, relief="flat")
     style.configure("Treeview.Heading", font=fonts.bold, background=th["head"],

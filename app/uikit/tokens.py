@@ -7,12 +7,6 @@ colours locally.
 """
 
 # --------------------------------------------------------------------------- scales
-# Spacing scale used across the app (px).
-SPACE = (2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24)
-
-# Corner radii from the design. Tk has no rounded corners; kept for documentation / canvas work.
-RADIUS = {"card": 10, "button": 6, "input": 5, "check": 4, "progress": 3}
-
 # Component metrics.
 METRICS = {
     "window": (1180, 790),
