@@ -1,11 +1,12 @@
-# ---- Not needed to RUN the app (business data, research & context) ----
+# ---- Not needed to RUN the app (business data) ----
 data/
-docs/
 recon/
-selftest.py
+output/
+
+# ---- Agent scratch / plan workspace ----
+.superpowers/
 
 # ---- Generated output & build artifacts ----
-output/
 build/
 build32/
 dist/

@@ -15,39 +15,39 @@ y exporta el Excel final listo para subir al portal.
 Facturacion MTM/
 ├── Facturacion MTM.exe     # ← EL PROGRAMA (doble clic para abrir la app)
 ├── run_app.py              # entrada por Python: GUI (doble clic) o CLI
-├── selftest.py             # test contra los claims terminados de septiembre
+├── selftest.py             # benchmark de precisión contra septiembre
+├── build.ps1               # build PyInstaller + copia el exe a la raíz
+├── requirements.txt        # dependencias de ejecución
+├── requirements-build.txt  # ejecución + PyInstaller
 ├── Facturacion MTM.spec    # receta de PyInstaller
 ├── version_info.txt        # versión/empresa que se embebe en el .exe
 ├── assets/                 # icon.png / icon.ico (marca de MTM) + ui/ (iconos del kit)
 │
 ├── app/                    # el motor (Python)
-│   ├── common.py           #   normalización de nombres / números / fechas / horas
+│   ├── common.py           #   normalización / fechas / horas / notas / helpers
 │   ├── parsers.py          #   reconoce y lee los 4 tipos de archivo POR ESTRUCTURA
-│   ├── filler.py           #   reglas de matching y relleno (ver NOTES.md §6)
+│   ├── filler.py           #   matching, notas, aprobación, sugerencias, reparto, PU/DropOff
 │   ├── pipeline.py         #   orquesta: escanear carpeta → índices → rellenar
 │   ├── report.py           #   reporte en pantalla + CSV
 │   ├── writer.py           #   salida EXACTA (una hoja por día, 10 columnas, ordenado por driver)
 │   ├── driverlogs.py       #   llena los driverlogs .docx por driver/día (python-docx)
 │   ├── bulk.py             #   genera el BULK UPLOAD .xlsx por día (plantilla bundleada)
+│   ├── strings.py          #   textos ES/EN de la UI
 │   ├── uikit/              #   design system Tkinter (tokens, tema, iconos, widgets)
 │   └── ui.py               #   interfaz Tkinter (consume uikit)
 │
+├── tests/                  # unittest + fixtures sintéticas (no necesitan data/)
 ├── data/
 │   ├── base/               # DATOS DE PRODUCCIÓN (el trabajo real)
-│   │   ├── ClaimInformation 10-05 A 10-15 OLD.xlsx   # lo que baja del portal
-│   │   ├── ClaimInformation 10-05 a 10-15 NEW.xlsx   # layout objetivo
-│   │   ├── Informacion de Drivers.xlsx               # License/VIN por número de driver
-│   │   ├── 10-05/ … 10-15/                           # RESÚMENES diarios
-│   │   └── 10-05.xlsx, 10-06.xlsx                    # archivos de viajes (PU Time / Milage)
-│   └── test/               # DATOS DE PRUEBA / referencia (no se usan al procesar)
-│       ├── reference/      #   ejemplo de salida terminada (09-22)
-│       └── Trips/          #   claims terminados + resúmenes de septiembre, carpeta Dalia, etc.
-│
+│   └── test/               # DATOS DE PRUEBA / referencia
 ├── docs/
-│   └── NOTES.md            # handoff completo del proyecto
+│   ├── NOTES.md            # estado actual (fuente de verdad)
+│   ├── HISTORY.md          # notas históricas
+│   ├── PU_TIME_FINDINGS.md # calibración de PU/DropOff
+│   └── PORTABILITY.md      # portabilidad / builds
 │
-├── dist/                   # (se genera al compilar con PyInstaller) build 64-bit
-├── dist32/                 # (se genera al compilar con PyInstaller) build 32-bit
+├── dist/                   # (se genera al compilar) build 64-bit
+├── dist32/                 # (se genera al compilar) build 32-bit
 └── build/                  # (se genera al compilar) artefactos temporales de PyInstaller
 ```
 
@@ -82,7 +82,7 @@ cualquier chat futuro tenga acceso.
 10. **Generar driverlogs (.docx)** → escribe un driverlog por driver y día en
     **`<día>\Docs\<día> <NUM>.docx`** (ej. `10-05 200.docx`). **No toca las plantillas**.
 11. **Generar BULK UPLOAD** → escribe **`<día>\BULK UPLOAD MM-DD-YYYY.xlsx`** (uno por día) listo para subir al
-    portal, con el mismo formato de la plantilla. Ver `docs/NOTES.md` §17.
+    portal, con el mismo formato de la plantilla. Ver `docs/NOTES.md`.
 
 > **Idioma y tema:** arriba a la derecha hay dos botones — uno de **idioma** (bandera 🇻🇪/🇺🇸, español por defecto)
 > y uno de **tema** (sol/luna, **modo oscuro por defecto**). Los iconos son PNG nítidos (`assets/ui/`, generados con
@@ -93,7 +93,8 @@ cualquier chat futuro tenga acceso.
 > calibrado con los datos históricos (ver `docs/PU_TIME_FINDINGS.md` y `tests/test_pickup.py`).
 >
 > **Drivers:** por defecto el app asigna **un driver por pata** según el resumen (opción **"Uno por pata"**). Si quieres
-> el **mismo driver en ambas** patas, elige esa opción en la UI o usa `--strategy pair`. Dalia siempre prefiere 349.
+> el **mismo driver en ambas** patas, elige esa opción en la UI o usa `--strategy pair`. Dalia prefiere 349 salvo que
+> el resumen traiga una nota `auto N` (por ejemplo, 309 en 10-14/10-15).
 
 ### Opción B — Python (para desarrollo)
 ```
@@ -106,19 +107,35 @@ python run_app.py --cli "<claim.xlsx>" "data\base" --gen-bulk --days-root "…\1
 python selftest.py                # mide precisión contra septiembre
 ```
 
+### Opción C — tests y build
+```powershell
+$py = "C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe"
+& $py -m unittest discover -s tests -v   # 32 tests, fixtures sintéticas (no necesita data/)
+& $py selftest.py                        # benchmark de septiembre
+.\build.ps1                              # PyInstaller + copia el exe a la raíz
+```
+
+`tests/` usa solo la librería estándar. El build por defecto usa el Python 32-bit portable en
+`%TEMP%\opencode\py32\python\python.exe`; si no existe, pasa `-Python <ruta>` o construye 64-bit para
+la prueba. El exe de la raíz sigue siendo el build 32-bit universal.
+
 ---
 
 ## Estado
 
 - **v1 (HECHO)**: ClaimInformation relleno, una hoja por día, ordenado por driver. Probado y empaquetado.
 - **v2 (HECHO)**: **driverlogs de Word** (.docx) — uno por driver y día, en `<día>\Docs\<día> <NUM>.docx`.
-  Botón "Generar driverlogs (.docx)" en la app; ver `docs/NOTES.md` §15.
+  Botón "Generar driverlogs (.docx)" en la app; ver `docs/NOTES.md`.
 - **v2.1 (HECHO)**: regla de **condado** (Volusia/Marion), Dalia prefiere un driver libre ese día, aviso si faltan
   trip files (Proceed/Cancel), chequeo de **tiempos A/B** (B no puede empezar antes que A) y apertura maximizada.
 - **v3 (HECHO)**: **BULK UPLOAD** por día — `<día>\BULK UPLOAD MM-DD-YYYY.xlsx` con el formato exacto de la plantilla
-  (usado por el portal). Botón "Generar BULK UPLOAD" / CLI `--gen-bulk`. Ver `docs/NOTES.md` §17.
+  (usado por el portal). Botón "Generar BULK UPLOAD" / CLI `--gen-bulk`. Ver `docs/NOTES.md`.
 - **v3.1 (HECHO)**: **32-bit universal** (corre en Windows de 32 y 64 bits).
   La firma digital quedó **pendiente** (por ahora el exe va sin firmar).
+- **v4 (HECHO, 28-oct-2026)**: auditoría/revamp. El reparto ya **no mueve filas con match/nota/preferencia**
+  (solo sugeridas), las filas con nota `Facturado.` se **omiten** del Excel/BULK/driverlogs y salen en el reporte,
+  se protegió la exportación contra sobreescribir el claim, se corrigió el estado `REVISAR`, se añadieron **32 tests**
+  (`python -m unittest discover -s tests -v`) y se limpió código muerto. Ver `docs/NOTES.md`.
 
 ## Portabilidad
 
@@ -129,7 +146,10 @@ driverlogs OK, salidas idénticas al motor).
 
 **Firma digital:** por ahora el `.exe` va **sin firmar**. Windows puede mostrar "Unknown publisher" la primera vez →
 *Más información → Ejecutar de todas formas*. Para usarlo en otra PC, copia **`Facturacion MTM.exe`**. La firma de
-código queda **pendiente** (ver `docs/NOTES.md` §16).
+código queda **pendiente** (ver `docs/HISTORY.md`).
+
+> **Importante:** el exe de la raíz es un artefacto de build y queda **anterior al revamp** hasta que se recompile
+> con `.\build.ps1` en una máquina con el Python 32-bit. El motor Python ya incluye todos los cambios.
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar
 (las horas y la milla de Dalia saldrían vacías) y deja elegir **Proceed / Cancel**.
