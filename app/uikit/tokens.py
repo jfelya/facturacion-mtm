@@ -65,11 +65,13 @@ PALETTES = {
 STATUS_TINTS = {
     "dark": {
         "OK": "#183A22", "NOTA": "#3D2E12", "SUGERIDO": "#2C2640", "BALANCEADO": "#14333B",
-        "REVISAR": "#3B2E17", "ELEGIR": "#1B2C44", "NO FACTURAR": "#2A2F36", "SIN DATO": "#3B1F22",
+        "REVISAR": "#3B2E17", "ELEGIR": "#1B2C44", "NO FACTURAR": "#2A2F36",
+        "FACTURADO": "#2A2F36", "SIN DATO": "#3B1F22",
     },
     "light": {
         "OK": "#DDF4E0", "NOTA": "#FFF3CD", "SUGERIDO": "#E7DDF7", "BALANCEADO": "#D7EEF5",
-        "REVISAR": "#FDE7C7", "ELEGIR": "#D9E7FB", "NO FACTURAR": "#E7E9EC", "SIN DATO": "#FBDDDD",
+        "REVISAR": "#FDE7C7", "ELEGIR": "#D9E7FB", "NO FACTURAR": "#E7E9EC",
+        "FACTURADO": "#E7E9EC", "SIN DATO": "#FBDDDD",
     },
 }
 

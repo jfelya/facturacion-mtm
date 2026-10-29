@@ -73,9 +73,13 @@ def _write_sheet(ws, rows):
 
 def write_output(claim, path, per_day=True):
     """per_day=True -> one sheet per day (default). False -> single 'ClaimInformation' sheet."""
+    all_rows = claim["rows"]
+    rows = [r for r in all_rows if r.get("flag") != "facturado"]
+    skipped = len(all_rows) - len(rows)
+    if not rows:
+        raise ValueError("No hay filas facturables para exportar")
     wb = Workbook()
     default = wb.active
-    rows = claim["rows"]
 
     if per_day:
         groups = {}
@@ -89,4 +93,5 @@ def write_output(claim, path, per_day=True):
         _write_sheet(default, rows)
 
     wb.save(path)
-    return {"path": str(path), "rows": len(rows), "sheets": len(wb.sheetnames)}
+    return {"path": str(path), "rows": len(rows), "sheets": len(wb.sheetnames),
+            "skipped": skipped}

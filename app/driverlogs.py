@@ -109,15 +109,18 @@ def generate_driverlogs(rows, templates_folder, days_root, only_days=None):
     Returns {'created': [...], 'skipped': [(day, drv)], 'errors': [...], 'days': {...}}
     """
     tpl = scan_templates(templates_folder)
+    billed_skipped = sum(1 for r in rows if r.get("flag") == "facturado")
     if not tpl:
         return {"created": [], "skipped": [], "errors": [f"No hay plantillas .docx en {templates_folder}"],
-                "days": {}, "templates": 0}
+                "days": {}, "templates": 0, "billed_skipped": billed_skipped}
     if not days_root:
         return {"created": [], "skipped": [], "errors": ["Falta la carpeta de días (days_root)"],
-                "days": {}, "templates": len(tpl)}
+                "days": {}, "templates": len(tpl), "billed_skipped": billed_skipped}
 
     by_day = {}
     for r in rows:
+        if r.get("flag") == "facturado":
+            continue
         d = r.get("date") or ""
         if d:
             by_day.setdefault(day_name(d), []).append(r)
@@ -150,7 +153,7 @@ def generate_driverlogs(rows, templates_folder, days_root, only_days=None):
         days[day] = {"docs": made, "drivers": sorted(by_drv, key=lambda x: (len(x), x))}
 
     return {"created": created, "skipped": skipped, "errors": errors, "days": days,
-            "templates": len(tpl)}
+            "templates": len(tpl), "billed_skipped": billed_skipped}
 
 
 def report_lines(res, lang="es"):

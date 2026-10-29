@@ -276,7 +276,7 @@ def generate_bulks(rows, days_root, template=None, only_days=None):
     Returns {'created': [...], 'days': {...}, 'excluded': [...], 'errors': [...], 'template': path}
     """
     selected = [r for r in rows
-                if r.get("driver") and r.get("flag") != "nofacturar" and r.get("date")]
+                if r.get("driver") and r.get("flag") not in ("nofacturar", "facturado") and r.get("date")]
     excluded = [r for r in rows if r.get("date") and r not in selected]
 
     by_day = {}

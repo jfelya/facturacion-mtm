@@ -67,7 +67,8 @@ STRINGS = {
         "st_working": "Procesando…",
         "st_error": "Error",
         "st_done": ("Listo: {ok} OK, {nota} con nota, {sug} sugerido (confirmar), {bal} reasignado (reparto), "
-                    "{elegir} por asignar, {nofact} sin facturar, {revisar} por revisar, {sindato} sin datos."),
+                    "{elegir} por asignar, {nofact} sin facturar, {facturado} ya facturado, "
+                    "{revisar} por revisar, {sindato} sin datos."),
         "err_claim": "Elige el archivo ClaimInformation (.xlsx).",
         "err_folder": "Elige la carpeta donde están los resúmenes / viajes / drivers.",
         "err_driverlogs": "Elige la carpeta de plantillas de driverlogs (.docx).",
@@ -158,7 +159,8 @@ STRINGS = {
         "st_working": "Processing…",
         "st_error": "Error",
         "st_done": ("Done: {ok} OK, {nota} with note, {sug} suggested (confirm), {bal} rebalanced, "
-                    "{elegir} to assign, {nofact} not billed, {revisar} to review, {sindato} no data."),
+                    "{elegir} to assign, {nofact} not billed, {facturado} already billed, "
+                    "{revisar} to review, {sindato} no data."),
         "err_claim": "Pick the ClaimInformation file (.xlsx).",
         "err_folder": "Pick the folder with the resúmenes / trips / drivers.",
         "err_driverlogs": "Pick the driverlogs templates folder (.docx).",
@@ -206,6 +208,8 @@ STRINGS = {
 
 def status_of(row):
     flag = row.get("flag") or ""
+    if flag == "facturado":
+        return "FACTURADO"
     if flag == "revisar":
         return "REVISAR"
     if row.get("driver") and row.get("milage") is not None:
@@ -682,7 +686,7 @@ class App:
                                       if s["trip"] in active]
         self.tree.delete(*self.tree.get_children())
         counts = {"OK": 0, "NOTA": 0, "SUGERIDO": 0, "REVISAR": 0, "ELEGIR": 0,
-                  "NO FACTURAR": 0, "SIN DATO": 0, "BALANCEADO": 0}
+                  "NO FACTURAR": 0, "FACTURADO": 0, "SIN DATO": 0, "BALANCEADO": 0}
         for row in res["claim"]["rows"]:
             stt = status_of(row)
             pu = row.get("pu")
@@ -709,7 +713,9 @@ class App:
         self.status.config(text=self.t("st_done", ok=counts["OK"], nota=counts["NOTA"],
                                        sug=counts["SUGERIDO"], bal=counts["BALANCEADO"],
                                        elegir=counts["ELEGIR"],
-                                       nofact=counts["NO FACTURAR"], revisar=counts["REVISAR"],
+                                       nofact=counts["NO FACTURAR"],
+                                       facturado=counts["FACTURADO"],
+                                       revisar=counts["REVISAR"],
                                        sindato=counts["SIN DATO"]),
                            foreground=THEMES[self.theme]["accent"])
         self._dot(THEMES[self.theme]["success"])
@@ -724,7 +730,7 @@ class App:
         if not self.result:
             return
         for row in self.result["claim"]["rows"]:
-            if row.get("flag") == "nofacturar":
+            if row.get("flag") in ("nofacturar", "facturado"):
                 continue
             suggested = row.get("flag") == "sugerido"
             if row.get("driver") and not suggested:
@@ -802,7 +808,7 @@ class App:
         if not self.result:
             return
         pend = [r for r in self.result["claim"]["rows"]
-                if not r.get("driver") and r.get("flag") != "nofacturar"]
+                if not r.get("driver") and r.get("flag") not in ("nofacturar", "facturado")]
         if pend and not messagebox.askyesno(self.t("pend_title"), self.t("pend_body", n=len(pend))):
             return
         src = Path(self.result["claim_path"])

@@ -21,6 +21,9 @@ L = {
         "balanced": "Reparto de drivers (soft ~2)",
         "suggested": "Driver sugerido", "suggest_note": "(el menos ocupado; confirmar)",
         "not_billed": "Claim sin resumen", "not_billed_note": "(NO facturar salvo Dalia)",
+        "billed": "Ya facturado", "billed_note": "(no se vuelve a facturar)",
+        "billed_title": "YA FACTURADO - NO SE VUELVE A FACTURAR",
+        "billed_hint": "Vienen del claim con nota «Facturado.»; ya se facturaron.",
         "no_driver": "Sin driver", "pick_manual": "(elegir manual)",
         "warnings": "ADVERTENCIAS", "review": "REVISAR",
         "sugg_title": "DRIVER SUGERIDO - CONFIRMAR",
@@ -48,6 +51,9 @@ L = {
         "balanced": "Driver rebalancing (soft ~2)",
         "suggested": "Suggested driver", "suggest_note": "(least busy; confirm)",
         "not_billed": "Claim w/o resumen", "not_billed_note": "(do NOT bill unless Dalia)",
+        "billed": "Already billed", "billed_note": "(not billed again)",
+        "billed_title": "ALREADY BILLED - NOT BILLED AGAIN",
+        "billed_hint": "They come from the claim with a 'Facturado.' note; already billed.",
         "no_driver": "No driver", "pick_manual": "(pick manually)",
         "warnings": "WARNINGS", "review": "REVIEW",
         "sugg_title": "SUGGESTED DRIVER - CONFIRM",
@@ -98,6 +104,8 @@ def report_text(result, lang="es"):
         lines.append(f"  {t['suggested']}:       {st['suggested']}  {t['suggest_note']}")
     if st.get("not_billed"):
         lines.append(f"  {t['not_billed']}:     {st['not_billed']}  {t['not_billed_note']}")
+    if st.get("already_billed"):
+        lines.append(f"  {t['billed']}:     {st['already_billed']}  {t['billed_note']}")
     if st.get("needs_driver"):
         lines.append(f"  {t['no_driver']}:            {st['needs_driver']}  {t['pick_manual']}")
     lines.append("")
@@ -153,6 +161,14 @@ def report_text(result, lang="es"):
         lines.append(f"{t['rwc_title']} ({len(rwc)})")
         for x in rwc:
             lines.append(f"  - {x['date']} {x['member']}")
+
+    billed = r.get("already_billed") or []
+    if billed:
+        lines.append("")
+        lines.append(f"{t['billed_title']} ({len(billed)})")
+        lines.append("  " + t["billed_hint"])
+        for x in billed:
+            lines.append(f"  - {x['date']} {x['member']} {x['trip']}")
 
     return "\n".join(lines)
 
