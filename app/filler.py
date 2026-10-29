@@ -159,6 +159,16 @@ def _assign(row, x, drivers, warnings, review, stats):
         review.append(f"NOTA {row['date']} {row['member']} {row['trip']}: {note[:90]}")
 
 
+def _can_balance(row):
+    """Only unmatched rows may be moved; matches, notes and preferred drivers win."""
+    member = (row.get("member") or "").upper()
+    return (row.get("driver")
+            and row.get("flag") not in ("nofacturar", "facturado")
+            and not row.get("src_resumen")
+            and not row.get("note_drv")
+            and member not in PREFERRED_DRIVER)
+
+
 def _balance_drivers(claim, drivers, stats, review):
     """Soft balancing: no driver should end the day with too many trips.
 
@@ -177,7 +187,7 @@ def _balance_drivers(claim, drivers, stats, review):
 
     by_date = {}
     for r in claim["rows"]:
-        if r.get("driver") and r.get("flag") != "nofacturar":
+        if r.get("driver") and r.get("flag") not in ("nofacturar", "facturado"):
             by_date.setdefault(r["date"], []).append(r)
 
     moved = 0
@@ -198,7 +208,11 @@ def _balance_drivers(claim, drivers, stats, review):
                 if not receivers:
                     continue
                 dst = min(receivers, key=lambda n: (counts.get(n, 0), _drv_sort(n)))
-                src_rows = [r for r in rows if r.get("driver") == src]
+                src_rows = [r for r in rows if r.get("driver") == src and _can_balance(r)]
+                if not src_rows:
+                    review.append(f"REPARTO BLOQUEADO {date} {src}: {counts[src]} viajes, "
+                                  f"todos con match/nota/preferencia (no se mueven)")
+                    continue
                 # move the most "flexible" trip: not pinned by a manual note, most recent first
                 src_rows.sort(key=lambda r: (1 if r.get("note_drv") else 0, -(r.get("row") or 0)))
                 r = src_rows[0]
