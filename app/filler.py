@@ -120,7 +120,7 @@ def _assign(row, x, drivers, warnings, review, stats):
     # approval check
     # approval check: a number that is NOT in the drivers list (or has no driverlog template)
     # is not billable -> it gets replaced by a free driver of that day (suggestion pass below)
-    allowed = (drivers.get("allowed") if drivers else None) or (set(drivers["table"]) if drivers else set())
+    allowed = _allowed_drivers(drivers)
     if driver and drivers and driver not in allowed:
         driver = ""
         row["flag"] = "revisar"
@@ -159,6 +159,14 @@ def _assign(row, x, drivers, warnings, review, stats):
         review.append(f"NOTA {row['date']} {row['member']} {row['trip']}: {note[:90]}")
 
 
+def _allowed_drivers(drivers):
+    """The approved set; an explicitly empty set means nobody is approved."""
+    if not drivers:
+        return set()
+    allowed = drivers.get("allowed")
+    return set(drivers["table"]) if allowed is None else set(allowed)
+
+
 def _can_balance(row):
     """Only unmatched rows may be moved; matches, notes and preferred drivers win."""
     member = (row.get("member") or "").upper()
@@ -179,7 +187,7 @@ def _balance_drivers(claim, drivers, stats, review):
     if not drivers:
         return
     table = drivers["table"]
-    allowed = drivers.get("allowed") or set(table)
+    allowed = _allowed_drivers(drivers)
     approved = [n for n in allowed if n not in PLACEHOLDER_DRIVERS]
 
     def county(n):
@@ -457,7 +465,7 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
                        or _city_county(city_by_trip.get(r["trip"].upper(), "")))
 
     if needs and drivers:
-        allowed = drivers.get("allowed") or set(drivers["table"])
+        allowed = _allowed_drivers(drivers)
         approved = [n for n in sorted(allowed, key=_drv_sort) if n not in PLACEHOLDER_DRIVERS]
         for d in sorted({r["date"] for r in needs}):
             counts = ((driver_usage or {}).get(d) or {}).get("count", {})
