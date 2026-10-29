@@ -19,7 +19,7 @@ from datetime import timedelta, datetime, date
 import re
 import random
 import zlib
-from .common import norm_num
+from .common import note_kind
 
 # placeholder / non-real driver numbers in Informacion de Drivers.xlsx
 PLACEHOLDER_DRIVERS = {"999"}
@@ -98,7 +98,7 @@ def _drv_sort(n):
     return (0, int(n)) if str(n).isdigit() else (1, str(n))
 
 
-def _assign(row, x, drivers, warnings, review, stats):
+def _assign(row, x, drivers, warnings, review, stats, billed):
     row["src_resumen"] = True          # this trip WAS matched to a resumen row (even if driver unapproved)
     if drivers:
         cty = (drivers["table"].get(x["driver"]) or {}).get("county")
@@ -153,7 +153,13 @@ def _assign(row, x, drivers, warnings, review, stats):
     else:
         warnings.append(f"{row['date']} {row['member']} {row['trip']}: fila de resumen sin MILES")
 
-    if note:
+    kind = x.get("note_kind") or note_kind(note)
+    if kind == "billed":
+        row["flag"] = "facturado"
+        stats["already_billed"] += 1
+        billed.append({"date": row["date"], "trip": row["trip"], "member": row["member"]})
+        review.append(f"YA FACTURADO {row['date']} {row['member']} {row['trip']}: {note[:90]}")
+    elif note:
         if row.get("flag") != "revisar":
             row["flag"] = "nota"
         review.append(f"NOTA {row['date']} {row['member']} {row['trip']}: {note[:90]}")
@@ -253,12 +259,13 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
     """
     warnings = []
     review = []
+    billed = []
     stats = {"rows": len(claim["rows"]), "id_matched": 0, "order_assigned": 0,
              "no_data": 0, "pu_filled": 0, "pu_willcall": 0, "pu_missing": 0,
              "flagged_unapproved": 0, "note_overrides": 0,
              "milage_from_trips": 0, "needs_driver": 0, "suggested": 0, "not_billed": 0,
              "pu_estimated": 0, "dropoff_filled": 0, "paired": 0, "spread": 0, "time_warnings": 0,
-             "balanced": 0}
+             "balanced": 0, "already_billed": 0}
 
     groups = {}
     for row in claim["rows"]:
@@ -299,7 +306,7 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             if cands:
                 x = cands[0]
                 used.add(id(x))
-                _assign(row, x, drivers, warnings, review, stats)
+                _assign(row, x, drivers, warnings, review, stats, billed)
                 stats["id_matched"] += 1
             else:
                 pending.append(row)
@@ -328,7 +335,7 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
                     f"{date} {member}: {len(targets)} viaje(s) vs {len(rest)} fila(s) de resumen "
                     f"(asignación parcial: revisar)")
             for row, x in zip(targets, rest):
-                _assign(row, x, drivers, warnings, review, stats)
+                _assign(row, x, drivers, warnings, review, stats, billed)
                 stats["order_assigned"] += 1
             for row in targets[len(rest):]:
                 warnings.append(f"{date} {member} {row['trip']}: sin fila de resumen MTM (revisar manual)")
@@ -447,7 +454,7 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
     needs_driver = []
     suggested = []
     not_billed = []
-    needs = [r for r in claim["rows"] if not r.get("driver")]
+    needs = [r for r in claim["rows"] if not r.get("driver") and r.get("flag") != "facturado"]
 
     # county of every row: from the resumen driver when matched, else from the trip's city
     city_by_trip = {}
@@ -534,4 +541,5 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
     return {"warnings": warnings, "review": review, "stats": stats,
             "needs_driver": needs_driver, "driver_candidates": driver_candidates,
             "suggested": suggested, "not_billed": not_billed,
+            "already_billed": billed,
             "resumen_without_claim": resumen_without_claim}

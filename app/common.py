@@ -13,6 +13,22 @@ def s(v):
     return str(v).strip()
 
 
+_BILLED_NOTE = re.compile(r"^\s*(?:ya\s+)?facturado\b", re.I)
+_ACTIONABLE_NOTE = re.compile(r"auto\s*\d+|duplicad|perfil|vehiculo|will\s*call", re.I)
+
+
+def note_kind(note):
+    """Classify a summary note: 'billed', 'actionable', 'info' or ''."""
+    t = s(note)
+    if not t:
+        return ""
+    if _BILLED_NOTE.match(t):
+        return "billed"
+    if _ACTIONABLE_NOTE.search(t):
+        return "actionable"
+    return "info"
+
+
 def nonempty(rows):
     return [r for r in rows if any(v not in (None, "") for v in r)]
 

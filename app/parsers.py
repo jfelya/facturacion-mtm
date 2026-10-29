@@ -9,7 +9,7 @@ Types:
 import re
 from .common import (
     s, nonempty, read_rows, norm_name, norm_num, to_iso, to_float,
-    parse_time_value, fmt_mdy,
+    parse_time_value, fmt_mdy, note_kind,
 )
 
 
@@ -177,6 +177,7 @@ def parse_resumen(path):
         out.append({
             "date": date_iso, "name": name, "driver": drv, "miles": miles,
             "trip_id": trip_id, "payer": payer, "note": note,
+            "note_kind": note_kind(note),
             "time": r[i_time] if i_time is not None and i_time < len(r) else None,
             "src": str(path),
         })

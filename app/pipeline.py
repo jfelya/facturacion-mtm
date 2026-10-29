@@ -101,6 +101,8 @@ def build_resumen_index(files, warnings, usage=None):
             for e in parsed:
                 if not e["date"] or not e["driver"]:
                     continue
+                if e.get("note_kind") == "billed":
+                    continue
                 # Dalia's SafeRide/Alivi rows are NOT our billing: ignore them entirely
                 # (she is billed from the provider claim, and her driver is chosen by hand)
                 if "DALIA" in e["name"].upper() and e["payer"].strip().upper() != "MTM":
