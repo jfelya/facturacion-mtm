@@ -5,6 +5,8 @@ sheet name `MM-DD`, each with the exact 9 columns and cell types of the
 finished example. Rows keep the order of the claim (grouped by member).
 """
 from datetime import datetime, time as dtime
+from pathlib import Path
+
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
@@ -73,6 +75,9 @@ def _write_sheet(ws, rows):
 
 def write_output(claim, path, per_day=True):
     """per_day=True -> one sheet per day (default). False -> single 'ClaimInformation' sheet."""
+    source = claim.get("path")
+    if source and Path(path).resolve() == Path(source).resolve():
+        raise ValueError("La salida no puede ser el archivo original del claim.")
     all_rows = claim["rows"]
     rows = [r for r in all_rows if r.get("flag") != "facturado"]
     skipped = len(all_rows) - len(rows)

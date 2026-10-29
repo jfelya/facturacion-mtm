@@ -819,7 +819,11 @@ class App:
             filetypes=[("Excel", "*.xlsx")])
         if not path:
             return
-        info = write_output(self.result["claim"], path)
+        try:
+            info = write_output(self.result["claim"], path)
+        except (ValueError, OSError) as e:
+            messagebox.showerror(self.t("st_error"), str(e))
+            return
         messagebox.showinfo(self.t("exp_title"),
                             self.t("exp_body", path=path, rows=info["rows"], sheets=info["sheets"]))
 
@@ -833,7 +837,11 @@ class App:
             filetypes=[("CSV", "*.csv")])
         if not path:
             return
-        write_report_csv(path, self.result)
+        try:
+            write_report_csv(path, self.result)
+        except OSError as e:
+            messagebox.showerror(self.t("st_error"), str(e))
+            return
         messagebox.showinfo(self.t("csv_title"), self.t("csv_body", path=path))
 
     # ---------------- driverlogs ----------------

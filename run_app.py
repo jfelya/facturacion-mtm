@@ -76,7 +76,11 @@ def main_cli(args):
         return 2
     p(report_text(res))
     if out:
-        info = write_output(res["claim"], out)
+        try:
+            info = write_output(res["claim"], out)
+        except (ValueError, OSError) as e:
+            p("ERROR:", e)
+            return 2
         p(f"\nGuardado: {out} ({info['rows']} filas)")
     if gen_dl:
         from app.driverlogs import generate_driverlogs, report_lines
