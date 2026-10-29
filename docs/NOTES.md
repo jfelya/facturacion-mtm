@@ -1,6 +1,6 @@
 # Facturación MTM — Current Project Notes
 
-> **Last updated:** 2026-10-28. This is the current source of truth.
+> **Last updated:** 2026-10-29. This is the current source of truth.
 > History and old decisions: `docs/HISTORY.md`. Time calibration: `docs/PU_TIME_FINDINGS.md`.
 > Portability/build details: `docs/PORTABILITY.md`.
 
@@ -15,7 +15,7 @@ the business's daily summaries, trip files and driver data, and exports:
 
 The user reviews the preview, confirms suggested drivers, and uploads the outputs to MTM.
 
-## 2. Current status (2026-10-28)
+## 2. Current status (2026-10-29)
 
 - v4 audit/revamp: matching accuracy restored, already-billed rows skipped, export overwrite guarded,
   review flags visible, empty allowed-driver set fixed, dead code removed, tests added.

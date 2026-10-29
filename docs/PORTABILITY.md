@@ -168,7 +168,7 @@ This test proves the two heaviest native dependencies (openpyxl, lxml) both load
 ## 7. Caveats (no blockers)
 
 1. **The EXE is currently UNSIGNED** (`Get-AuthenticodeSignature` → `NotSigned`) but **has version info + the MTM icon**
-   (`FileVersion 2.3.0.0`, `CompanyName Disma Transportation`). On another PC, SmartScreen will likely show
+   (`FileVersion 2.4.0.0`, `CompanyName Disma Transportation`). On another PC, SmartScreen will likely show
    *"Windows protected your PC / Unknown publisher"* → the user must click **More info → Run anyway**. This is a trust
    prompt, not a dependency problem. Digital signing was **removed on 19-oct** and deferred (see `docs/HISTORY.md`).
 2. **Antivirus / AppLocker:** one-file PyInstaller EXEs occasionally trigger heuristic AV flags, and the
@@ -236,8 +236,8 @@ A 64-bit build is also kept because it is slightly faster on modern machines.
 | Check | Result |
 |---|---|
 | PE machine | `0x014C` = **i386 (32-bit)** ✅ |
-| Version info | `2.3.0.0`, CompanyName `Disma Transportation` ✅ |
-| Size | **15.81 MiB** (32-bit) vs 17.73 MiB (64-bit) |
+| Version info | `2.4.0.0`, CompanyName `Disma Transportation` ✅ |
+| Size | **16,595,921 bytes** (32-bit) vs 17.73 MiB (64-bit) |
 | Runs from a folder with **only the exe** | ✅ exit 0 |
 | Excel output vs Python engine | **0 diffs** (all 9 sheets) ✅ |
 | BULK UPLOAD (9 files) vs engine | **0 diffs** ✅ |
