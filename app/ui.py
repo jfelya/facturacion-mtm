@@ -206,6 +206,8 @@ STRINGS = {
 
 def status_of(row):
     flag = row.get("flag") or ""
+    if flag == "revisar":
+        return "REVISAR"
     if row.get("driver") and row.get("milage") is not None:
         if flag == "sugerido":
             return "SUGERIDO"
