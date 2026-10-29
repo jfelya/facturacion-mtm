@@ -110,7 +110,7 @@ python selftest.py                # mide precisión contra septiembre
 ### Opción C — tests y build
 ```powershell
 $py = "C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe"
-& $py -m unittest discover -s tests -v   # 32 tests, fixtures sintéticas (no necesita data/)
+& $py -m unittest discover -s tests -v   # 39 tests, fixtures sintéticas (no necesita data/)
 & $py selftest.py                        # benchmark de septiembre
 .\build.ps1                              # PyInstaller + copia el exe a la raíz
 ```
@@ -134,7 +134,7 @@ la prueba. El exe de la raíz sigue siendo el build 32-bit universal.
   La firma digital quedó **pendiente** (por ahora el exe va sin firmar).
 - **v4 (HECHO, 28-oct-2026)**: auditoría/revamp. El reparto ya **no mueve filas con match/nota/preferencia**
   (solo sugeridas), las filas con nota `Facturado.` se **omiten** del Excel/BULK/driverlogs y salen en el reporte,
-  se protegió la exportación contra sobreescribir el claim, se corrigió el estado `REVISAR`, se añadieron **32 tests**
+  se protegió la exportación contra sobreescribir el claim, se corrigió el estado `REVISAR`, se añadieron **39 tests**
   (`python -m unittest discover -s tests -v`) y se limpió código muerto. Ver `docs/NOTES.md`.
 
 ## Portabilidad

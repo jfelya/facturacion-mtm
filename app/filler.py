@@ -298,6 +298,20 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
 
         # 2) order-based assignment of the rest
         rest = [x for x in res if id(x) not in used]
+        billed_rest = [x for x in rest
+                       if (x.get("note_kind") or note_kind(x.get("note"))) == "billed"]
+        if billed_rest:
+            for x in billed_rest:
+                billed.append({"date": date, "trip": x.get("trip_id") or "-", "member": member})
+            stats["already_billed"] += len(billed_rest)
+            billed_ids = {id(x) for x in billed_rest}
+            rest = [x for x in rest if id(x) not in billed_ids]
+            if pending:
+                warnings.append(
+                    f"{date} {member}: {len(billed_rest)} fila(s) de resumen ya facturada(s) "
+                    f"sin Trip ID; se excluyen de la asignación por orden (revisar)")
+                for row in pending:
+                    row["flag"] = "revisar"
         if pending and rest:
             order = {"A": 0, "B": 1} if strategy == "first_row_A" else {"B": 0, "A": 1}
             targets = sorted(pending, key=lambda r: (order.get(r["leg"], 9), r["trip"]))
@@ -424,12 +438,14 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
         if apu and bpu and bpu < apu:
             warnings.append(f"{d} {member}: la pata B ({b['trip']}, PU {bpu.strftime('%H:%M')}) empieza ANTES "
                             f"que la A ({a['trip']}, PU {apu.strftime('%H:%M')}) -> revisar tiempos")
-            b["flag"] = "revisar"
+            if b.get("flag") != "facturado":
+                b["flag"] = "revisar"
             stats["time_warnings"] += 1
         if ad and bd and bd < ad:
             warnings.append(f"{d} {member}: el DropOff de la pata B ({b['trip']}, {bd.strftime('%H:%M')}) es antes "
                             f"que el de la A ({a['trip']}, {ad.strftime('%H:%M')}) -> revisar tiempos")
-            b["flag"] = "revisar"
+            if b.get("flag") != "facturado":
+                b["flag"] = "revisar"
             stats["time_warnings"] += 1
 
     # 4) Rows with no driver (no MTM resumen row, or unapproved number).

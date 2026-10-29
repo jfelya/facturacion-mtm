@@ -19,7 +19,7 @@ The user reviews the preview, confirms suggested drivers, and uploads the output
 
 - v4 audit/revamp: matching accuracy restored, already-billed rows skipped, export overwrite guarded,
   review flags visible, empty allowed-driver set fixed, dead code removed, tests added.
-- 32 stdlib `unittest` tests pass.
+- 39 stdlib `unittest` tests pass.
 - September benchmark: `first_row_B` **46/70 exact (65.7%)** with the current default settings.
 - October batch: 81 claim rows, 9 summaries, 9 trip files; no matched row currently carries a
   `Facturado.` note, so the skip rule is exercised by synthetic tests and is ready for future batches.
@@ -118,14 +118,19 @@ can count toward a driver's workload but do not become claim rows.
    - `Facturado.` / `Ya facturado.` → row is **already billed**: flag `FACTURADO`, excluded from the
      claim Excel, BULK and new driverlogs; listed in the report. It also does not count as workload
      for driver suggestions.
+   - Only an **exact Trip ID** match auto-marks a claim row as `FACTURADO`. If a member/day group has
+     both billed and normal resumen rows without Trip IDs, the billed rows are excluded from the
+     order-based pairing, the group is flagged `REVISAR`, and every billed resumen row is listed.
+     The app never silently skips a new trip by pairing it with an already-billed row.
+   - A B-leg time warning (`B` before `A`) never clears the `FACTURADO` flag.
    - `Facturar manualmente. Driver X, auto N.` → still billable; driver N wins if approved.
    - Other notes (`Facturación manual.`, etc.) → normal note; row stays billable and appears as `NOTA`
      for review.
 5. **Approved drivers.** A driver must be in `Informacion de Drivers.xlsx`. When a driverlogs folder
    is provided, the driver must also have a template (`<NUM> … DRIVERLOG VACIO.docx`).
-   `allowed = driver list ∩ templates`. An **empty** allowed set means no driver is accepted or
-   suggested. `999` is a placeholder: excluded from suggestions/balancing; no 999 appears in current
-   summaries.
+   `allowed = driver list ∩ templates`. An **empty** driverlogs folder means **no driver is approved,
+   accepted or suggested** (not “fall back to all”). `999` is a placeholder: excluded from
+   suggestions/balancing; no 999 appears in current summaries.
 6. **Dalia.** If the claim has a Dalia row without an MTM resumen, it is billable and the app suggests
    the least-busy approved driver of that day/county, preferring `349`. A resumen note `auto 309`
    overrides the preference (as on 10-14/10-15).
@@ -164,13 +169,14 @@ python run_app.py --cli "<claim.xlsx>" "data\base" --gen-bulk --days-root "…\1
 python run_app.py --cli "<claim.xlsx>" "data\base" --gen-driverlogs --driverlogs "<plantillas>" --days-root "<raíz>"
 ```
 
-Export refuses to write over the source claim. A locked target file shows an error instead of crashing.
+Excel and CSV export refuse to write over the source claim. A locked target file shows an error instead
+of crashing.
 
 ## 9. Tests and build
 
 ```powershell
 $py = "C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe"
-& $py -m unittest discover -s tests -v   # 32 tests, synthetic fixtures, no data/ needed
+& $py -m unittest discover -s tests -v   # 39 tests, synthetic fixtures, no data/ needed
 & $py selftest.py                        # September accuracy benchmark
 .\build.ps1                              # PyInstaller + copy root exe (32-bit Python path by default)
 ```

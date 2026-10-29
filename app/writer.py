@@ -66,11 +66,15 @@ def _write_sheet(ws, rows):
                 c.value = None
 
 
-def write_output(claim, path, per_day=True):
-    """per_day=True -> one sheet per day (default). False -> single 'ClaimInformation' sheet."""
-    source = claim.get("path")
+def ensure_not_source(path, source):
+    """Refuse writing an output over the original claim."""
     if source and Path(path).resolve() == Path(source).resolve():
         raise ValueError("La salida no puede ser el archivo original del claim.")
+
+
+def write_output(claim, path, per_day=True):
+    """per_day=True -> one sheet per day (default). False -> single 'ClaimInformation' sheet."""
+    ensure_not_source(path, claim.get("path"))
     all_rows = claim["rows"]
     rows = [r for r in all_rows if r.get("flag") != "facturado"]
     skipped = len(all_rows) - len(rows)

@@ -868,3 +868,16 @@ Mark completed tasks, record the exact commands and results, and list any residu
 - **Type consistency:** `note_kind` returns strings; `already_billed` is an int stat and a list in the report; `billed_skipped` is an int in driverlogs; `write_output` returns `skipped`.
 - **Review focus:** each of the five failure modes has an owning test (Tasks 2–7).
 - **Proportion:** the plan is longer than the diff because it covers a full audit; each task is independently reviewable and ends with a test/verification and commit.
+
+## Post-review fixes (2026-10-28)
+
+The independent review found two Critical issues and one Important focus gap; all were fixed with RED→GREEN tests:
+
+- **Mixed billed/normal groups:** billed resumen rows are excluded from order-based pairing. Only an exact Trip ID match marks a claim row `FACTURADO`; a mixed group without Trip IDs is flagged `REVISAR` and every billed resumen row is listed. Tests: `test_mixed_billed_and_normal_rows_do_not_skip_new_trip`, `test_mixed_billed_and_normal_ab_group_does_not_skip_new_leg`, `test_exact_trip_id_still_marks_facturado`.
+- **Time warning no longer clears `FACTURADO`:** the B-before-A check preserves the billed flag. Test: `test_time_warning_does_not_clear_facturado`; coverage for the normal B-before-A case: `test_b_before_a_marks_revisar`.
+- **Empty driverlogs folder rejects all drivers:** `run_job` always intersects with the template set when a folder is provided, even if it is empty. Test: `test_empty_driverlogs_folder_rejects_every_driver`.
+- **CSV export cannot overwrite the claim:** `ensure_not_source` is used by both Excel and CSV paths. Test: `test_ensure_not_source_rejects_the_source_path`.
+- Final test count: **39**, all passing; September benchmark remains 46/70; October Excel cell diff vs the pre-review run remains 0.
+
+Deferred minors (recorded, not fixed): UI `needs_driver` includes billed rows; missing blocked-balance warning when no receiver exists; BULK/driverlog message boxes under-report billed exclusions; `day_name` malformed-date fallback; note detection prefers the first matching cell rather than a NOTES/BILLING column. Residual risk: the root 32-bit exe remains 2.3.0.0 until rebuilt with the 32-bit toolchain; export over a resumen/trip source is not guarded (only the claim is).
+

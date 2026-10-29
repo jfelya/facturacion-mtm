@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .pipeline import run_job
 from .report import report_text, write_report_csv
-from .writer import write_output
+from .writer import ensure_not_source, write_output
 from . import uikit
 from .uikit import THEMES
 from .strings import STRINGS
@@ -609,8 +609,9 @@ class App:
         if not path:
             return
         try:
+            ensure_not_source(path, self.result["claim_path"])
             write_report_csv(path, self.result)
-        except OSError as e:
+        except (ValueError, OSError) as e:
             messagebox.showerror(self.t("st_error"), str(e))
             return
         messagebox.showinfo(self.t("csv_title"), self.t("csv_body", path=path))

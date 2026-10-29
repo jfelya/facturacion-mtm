@@ -205,7 +205,10 @@ def run_job(claim_path, sources_folder, drivers_path=None, strategy="first_row_B
                     warnings.append("Drivers en la lista pero SIN plantilla de driverlog "
                                     "(se reemplazarán por uno libre que sí tenga): "
                                     + ", ".join(missing))
-                allowed &= tpl
+            else:
+                warnings.append("No hay plantillas de driverlog en la carpeta indicada "
+                                "-> ningún driver queda aprobado")
+            allowed &= tpl
         drivers["allowed"] = allowed
 
     report = fill_claim(

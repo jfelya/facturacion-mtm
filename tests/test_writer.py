@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from app.writer import write_output
+from app.writer import ensure_not_source, write_output
 
 
 def _row(flag=""):
@@ -39,6 +39,14 @@ class WriterGuardTests(unittest.TestCase):
             out = Path(tmp) / "out.xlsx"
             with self.assertRaises(ValueError):
                 write_output({"rows": [_row("facturado")]}, out)
+
+    def test_ensure_not_source_rejects_the_source_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "claim.xlsx"
+            source.write_bytes(b"ORIGINAL")
+            with self.assertRaises(ValueError):
+                ensure_not_source(source, source)
+            ensure_not_source(Path(tmp) / "other.csv", source)
 
 
 if __name__ == "__main__":
