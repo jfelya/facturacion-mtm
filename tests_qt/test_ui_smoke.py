@@ -121,6 +121,9 @@ class UiSmokeTests(unittest.TestCase):
         self.assertEqual(dialog.selected["num"], "200")
         dialog.deleteLater()
 
+    def test_window_has_app_icon(self):
+        self.assertFalse(self.win.windowIcon().isNull())
+
     def test_generate_pdfs_reports_merge(self):
         days = self.root / "days"
         days.mkdir()

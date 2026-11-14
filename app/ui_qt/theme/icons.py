@@ -24,3 +24,12 @@ def icon(name, size=None):
         if path.exists():
             return QIcon(str(path))
     return QIcon()
+
+
+def app_icon():
+    """Window/taskbar icon; the multi-size .ico is what Windows renders best."""
+    for name in ("icon.ico", "icon.png"):
+        path = asset_path("assets", name)
+        if path.exists():
+            return QIcon(str(path))
+    return QIcon()

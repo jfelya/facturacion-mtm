@@ -25,7 +25,20 @@ def _font():
     return font
 
 
+def _set_app_user_model_id():
+    """Let Windows group the window under the exe's own icon in the taskbar."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "Disma.FacturacionMTM.3")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def main():
+    _set_app_user_model_id()
     QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )
@@ -36,7 +49,7 @@ def main():
     app.setApplicationVersion(APP_VERSION)
     app.setStyle("Fusion")
     app.setFont(_font())
-    app.setWindowIcon(icons.icon("icon"))
+    app.setWindowIcon(icons.app_icon())
     apply_theme(app, "dark")
 
     window = MainWindow(app)

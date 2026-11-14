@@ -67,6 +67,7 @@ class MainWindow(QMainWindow):
     def __init__(self, app):
         super().__init__()
         self.app = app
+        self.setWindowIcon(icons.app_icon())
         self.state = AppState()
         self._thread = None
         self._worker = None
