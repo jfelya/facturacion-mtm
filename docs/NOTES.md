@@ -15,14 +15,17 @@ the business's daily summaries, trip files and driver data, and exports:
 
 The user reviews the preview, confirms suggested drivers, and uploads the outputs to MTM.
 
-## 2. Current status (2026-10-29)
+## 2. Current status (2026-11-14)
 
 - v4 audit/revamp: matching accuracy restored, already-billed rows skipped, export overwrite guarded,
   review flags visible, empty allowed-driver set fixed, dead code removed, tests added.
-- 39 stdlib `unittest` tests pass.
+- 39 engine `unittest` tests pass; 5 PySide6 UI tests pass (`tests_qt/`, offscreen).
 - September benchmark: `first_row_B` **46/70 exact (65.7%)** with the current default settings.
 - October batch: 81 claim rows, 9 summaries, 9 trip files; no matched row currently carries a
   `Facturado.` note, so the skip rule is exercised by synthetic tests and is ready for future batches.
+- **Qt migration in progress:** `app/ui_qt/` + `run_app_qt.py`; 64-bit only; Tk remains the rollback.
+  The Qt one-file build is `dist_qt\Facturacion MTM Qt.exe` (43 MB, v3.0.0.0). It is not the root
+  deliverable yet; cutover happens after parity validation.
 
 ## 3. Environment
 
@@ -39,14 +42,21 @@ The user reviews the preview, confirms suggested drivers, and uploads the output
 
 ```
 Facturacion MTM/
-├── Facturacion MTM.exe       # current 32-bit universal build (root)
-├── run_app.py                # GUI or --cli entry point
+├── Facturacion MTM.exe       # 32-bit Tk rollback build (root)
+├── run_app.py                # Tk GUI or --cli entry point (rollback/CLI)
+├── run_app_qt.py             # PySide6 GUI entry point (64-bit)
 ├── selftest.py               # September accuracy benchmark (not a unit test)
-├── build.ps1                 # PyInstaller build + copy root exe
-├── requirements.txt          # runtime
+├── build.ps1                 # Tk 32-bit PyInstaller build
+├── build_qt.ps1              # Qt 64-bit PyInstaller build
+├── Facturacion MTM.spec      # Tk build recipe
+├── Facturacion MTM Qt.spec   # Qt build recipe
+├── requirements.txt          # runtime (engine/CLI)
+├── requirements-ui.txt       # PySide6-Essentials
 ├── requirements-build.txt    # runtime + PyInstaller
+├── requirements-ui-build.txt # runtime + PySide6 + PyInstaller
 ├── app/
 │   ├── common.py             # normalization, dates/times, notes, shared helpers
+│   ├── status.py             # UI-neutral status_of(row)
 │   ├── parsers.py            # claim/resumen/trips/drivers detection + parsing
 │   ├── filler.py             # matching, approvals, notes, suggestions, balancing, PU/DropOff
 │   ├── pipeline.py           # scan -> indexes -> fill -> result
@@ -55,10 +65,12 @@ Facturacion MTM/
 │   ├── driverlogs.py         # Word driverlogs
 │   ├── report.py             # text/CSV report
 │   ├── strings.py            # ES/EN UI text
-│   ├── uikit/                # Tkinter design tokens/widgets
-│   └── ui.py                 # Tkinter UI
-├── tests/                    # stdlib unittest + synthetic fixtures
-├── docs/                     # NOTES, HISTORY, calibration, portability
+│   ├── uikit/                # Tkinter design tokens/widgets (rollback)
+│   ├── ui.py                 # Tkinter UI (rollback)
+│   └── ui_qt/                # PySide6 UI (migration)
+├── tests/                    # engine unittest + synthetic fixtures
+├── tests_qt/                 # PySide6 UI tests
+├── docs/                     # NOTES, HISTORY, calibration, portability, Qt analysis
 ├── assets/                   # app icon + UI PNGs
 └── data/                     # production/test data (gitignored)
 ```
@@ -152,16 +164,19 @@ can count toward a driver's workload but do not become claim rows.
 
 ## 8. UI and CLI
 
-GUI: `python run_app.py` (or double-click the exe).
+**Tk rollback:** `python run_app.py` (or double-click the 32-bit exe).  
+**Qt UI (64-bit, migration):** `python run_app_qt.py` after installing `requirements-ui.txt`.
 
-Steps: claim → sources folder → optional drivers file → optional driverlog templates → optional days
-root → **Procesar**. Review the colored preview, use **Asignar driver** for suggested/empty rows, then
-**Exportar Excel**, **Generar driverlogs**, **Generar BULK UPLOAD**.
+Both UIs use the same engine and the same steps: claim → sources folder → optional drivers file → optional
+driverlog templates → optional days root → **Procesar**. Review the colored preview, use **Asignar driver**
+for suggested/empty rows, then **Exportar Excel**, **Generar driverlogs**, **Generar BULK UPLOAD**.
 
-Status colors: OK, NOTA, SUGERIDO, BALANCEADO, REVISAR, ELEGIR, NO FACTURAR, FACTURADO, SIN DATO.
-Language (ES/EN) and dark/light theme are toggles in the header.
+Qt layout: left source/options rail, summary/status chips, Preview/Report tabs, bottom selected-row detail
+drawer, status bar. The Tk UI keeps its three-tab layout. Status colors: OK, NOTA, SUGERIDO, BALANCEADO,
+REVISAR, ELEGIR, NO FACTURAR, FACTURADO, SIN DATO. Language (ES/EN) and dark/light are header toggles.
+The Qt UI is 64-bit-only; Tk remains the 32-bit rollback until cutover.
 
-CLI examples:
+CLI examples (unchanged):
 
 ```
 python run_app.py --cli "<claim.xlsx>" "data\base" --out "output\salida.xlsx"
@@ -177,10 +192,17 @@ of crashing.
 
 ```powershell
 $py = "C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe"
-& $py -m unittest discover -s tests -v   # 39 tests, synthetic fixtures, no data/ needed
+& $py -m unittest discover -s tests -v   # 39 engine tests, synthetic fixtures, no data/ needed
+$env:QT_QPA_PLATFORM="offscreen"
+& $py -m unittest discover -s tests_qt -v # 5 Qt UI tests
 & $py selftest.py                        # September accuracy benchmark
-.\build.ps1                              # PyInstaller + copy root exe (32-bit Python path by default)
+.\build.ps1                              # Tk 32-bit build + root exe
+.\build_qt.ps1                           # Qt 64-bit build, dist_qt\Facturacion MTM Qt.exe
 ```
+
+The Qt build uses `PySide6-Essentials==6.12.0` and Python 3.14.6 64-bit. It is a 64-bit one-file
+build (~43 MB in the first build); the Tk 32-bit root exe remains in place until the Qt parity run is
+accepted. See `docs/PYSIDE6_UI_MIGRATION_ANALYSIS.md` for the full analysis.
 
 `tests/` uses stdlib `unittest` only. `selftest.py` is a benchmark, not a pass/fail gate; its current
 `first_row_B` result is 46/70 exact.

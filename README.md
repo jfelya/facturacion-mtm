@@ -14,17 +14,24 @@ y exporta el Excel final listo para subir al portal.
 ```
 Facturacion MTM/
 ├── Facturacion MTM.exe     # ← EL PROGRAMA (doble clic para abrir la app)
-├── run_app.py              # entrada por Python: GUI (doble clic) o CLI
+├── run_app.py              # entrada por Python: GUI Tkinter (rollback) o CLI
+├── run_app_qt.py           # entrada de la nueva UI PySide6 (64-bit)
 ├── selftest.py             # benchmark de precisión contra septiembre
-├── build.ps1               # build PyInstaller + copia el exe a la raíz
-├── requirements.txt        # dependencias de ejecución
-├── requirements-build.txt  # ejecución + PyInstaller
-├── Facturacion MTM.spec    # receta de PyInstaller
-├── version_info.txt        # versión/empresa que se embebe en el .exe
+├── build.ps1               # build PyInstaller Tk 32-bit (rollback)
+├── build_qt.ps1            # build PyInstaller Qt 64-bit
+├── Facturacion MTM.spec    # receta PyInstaller Tk
+├── Facturacion MTM Qt.spec # receta PyInstaller Qt
+├── requirements.txt        # dependencias del motor/CLI
+├── requirements-ui.txt     # PySide6-Essentials
+├── requirements-build.txt  # motor + PyInstaller
+├── requirements-ui-build.txt # motor + PySide6 + PyInstaller
+├── version_info.txt        # versión del build Tk
+├── version_info_qt.txt     # versión del build Qt
 ├── assets/                 # icon.png / icon.ico (marca de MTM) + ui/ (iconos del kit)
 │
-├── app/                    # el motor (Python)
+├── app/                    # el motor (Python) + UI
 │   ├── common.py           #   normalización / fechas / horas / notas / helpers
+│   ├── status.py           #   estado visual de una fila (compartido Tk/Qt)
 │   ├── parsers.py          #   reconoce y lee los 4 tipos de archivo POR ESTRUCTURA
 │   ├── filler.py           #   matching, notas, aprobación, sugerencias, reparto, PU/DropOff
 │   ├── pipeline.py         #   orquesta: escanear carpeta → índices → rellenar
@@ -33,10 +40,12 @@ Facturacion MTM/
 │   ├── driverlogs.py       #   llena los driverlogs .docx por driver/día (python-docx)
 │   ├── bulk.py             #   genera el BULK UPLOAD .xlsx por día (plantilla bundleada)
 │   ├── strings.py          #   textos ES/EN de la UI
-│   ├── uikit/              #   design system Tkinter (tokens, tema, iconos, widgets)
-│   └── ui.py               #   interfaz Tkinter (consume uikit)
+│   ├── uikit/              #   design system Tkinter (rollback)
+│   ├── ui.py               #   UI Tkinter (rollback)
+│   └── ui_qt/              #   nueva UI PySide6 (models, delegates, theme, dialogs)
 │
 ├── tests/                  # unittest + fixtures sintéticas (no necesitan data/)
+├── tests_qt/               # tests de la UI PySide6
 ├── data/
 │   ├── base/               # DATOS DE PRODUCCIÓN (el trabajo real)
 │   └── test/               # DATOS DE PRUEBA / referencia
@@ -119,6 +128,18 @@ $py = "C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe"
 `%TEMP%\opencode\py32\python\python.exe`; si no existe, pasa `-Python <ruta>` o construye 64-bit para
 la prueba. El exe de la raíz sigue siendo el build 32-bit universal.
 
+### Opción D — nueva UI Qt (64-bit, en migración)
+```powershell
+pip install -r requirements-ui.txt       # PySide6-Essentials 6.12 (64-bit)
+python run_app_qt.py                    # nueva UI PySide6
+$env:QT_QPA_PLATFORM="offscreen"
+& $py -m unittest discover -s tests_qt -v
+.\build_qt.ps1                          # 64-bit, dist_qt\Facturacion MTM Qt.exe
+```
+
+La UI Qt es **64-bit-only** y convive con la Tk actual. La Tk queda como rollback en `run_app.py` y
+`Facturacion MTM.exe`; la nueva salida se llama `Facturacion MTM Qt.exe` y no reemplaza la raíz todavía.
+
 ---
 
 ## Estado
@@ -136,6 +157,9 @@ la prueba. El exe de la raíz sigue siendo el build 32-bit universal.
   (solo sugeridas), las filas con nota `Facturado.` se **omiten** del Excel/BULK/driverlogs y salen en el reporte,
   se protegió la exportación contra sobreescribir el claim, se corrigió el estado `REVISAR`, se añadieron **39 tests**
   (`python -m unittest discover -s tests -v`) y se limpió código muerto. Ver `docs/NOTES.md`.
+- **v5 (EN MIGRACIÓN, 14-nov-2026)**: nueva UI **PySide6 + QSS** 64-bit en `app/ui_qt/`, entrada `run_app_qt.py`,
+  build `build_qt.ps1` / `dist_qt\Facturacion MTM Qt.exe`. La Tk 32-bit se mantiene como rollback. Ver
+  `docs/PYSIDE6_UI_MIGRATION_ANALYSIS.md`.
 
 ## Portabilidad
 

@@ -1,0 +1,2 @@
+# Qt UI runtime (64-bit only)
+PySide6-Essentials==6.12.0
