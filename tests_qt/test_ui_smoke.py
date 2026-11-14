@@ -3,6 +3,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -11,7 +12,7 @@ from PySide6.QtWidgets import QApplication
 from app.pipeline import run_job
 from app.ui_qt.dialogs.assign_driver import AssignDriverDialog
 from app.ui_qt.main_window import MainWindow
-from tests.fixtures import make_claim, make_drivers, make_resumen, make_trips
+from tests.fixtures import make_claim, make_docx_template, make_drivers, make_resumen, make_trips
 
 
 def _batch(root):
@@ -119,3 +120,25 @@ class UiSmokeTests(unittest.TestCase):
         self.assertEqual(dialog.action, "assign")
         self.assertEqual(dialog.selected["num"], "200")
         dialog.deleteLater()
+
+    def test_output_actions_write_engine_files(self):
+        days = self.root / "days"
+        templates = self.root / "templates"
+        days.mkdir()
+        make_docx_template(templates / "200 TEST DRIVERLOG VACIO.docx")
+        self.win.state.days_root = str(days)
+        self.win.state.driverlogs_folder = str(templates)
+        out = self.root / "out.xlsx"
+        csv = self.root / "out.csv"
+        with patch("app.ui_qt.main_window.QFileDialog.getSaveFileName",
+                   side_effect=[(str(out), ""), (str(csv), "")]), \
+                patch("app.ui_qt.main_window.messages.info"):
+            self.win.export_excel()
+            self.win.save_csv()
+            self.win.generate_driverlogs()
+            self.win.generate_bulk()
+        self.assertTrue(out.exists())
+        self.assertTrue(csv.exists())
+        self.assertTrue((days / "10-05" / "Docs" / "10-05 200.docx").exists())
+        self.assertTrue((days / "10-05" / "BULK UPLOAD 10-05-2026.xlsx").exists())
+

@@ -19,7 +19,7 @@ The user reviews the preview, confirms suggested drivers, and uploads the output
 
 - v4 audit/revamp: matching accuracy restored, already-billed rows skipped, export overwrite guarded,
   review flags visible, empty allowed-driver set fixed, dead code removed, tests added.
-- 39 engine `unittest` tests pass; 5 PySide6 UI tests pass (`tests_qt/`, offscreen).
+- 39 engine `unittest` tests pass; 6 PySide6 UI tests pass (`tests_qt/`, offscreen).
 - September benchmark: `first_row_B` **46/70 exact (65.7%)** with the current default settings.
 - October batch: 81 claim rows, 9 summaries, 9 trip files; no matched row currently carries a
   `Facturado.` note, so the skip rule is exercised by synthetic tests and is ready for future batches.
@@ -195,7 +195,7 @@ of crashing.
 $py = "C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe"
 & $py -m unittest discover -s tests -v   # 39 engine tests, synthetic fixtures, no data/ needed
 $env:QT_QPA_PLATFORM="offscreen"
-& $py -m unittest discover -s tests_qt -v # 5 Qt UI tests
+& $py -m unittest discover -s tests_qt -v # 6 Qt UI tests
 & $py selftest.py                        # September accuracy benchmark
 .\build.ps1                              # Tk 32-bit build + root exe
 .\build_qt.ps1                           # Qt 64-bit build, Facturacion MTM Qt.exe (root + dist_qt)
