@@ -6,6 +6,12 @@
 **Owner decision assumed:** move to **64-bit only** with the new visual design.
 **Prompt analysed:** `docs/PROMPT_PYSIDE6_UI_MIGRATION.md`
 
+> **Implementation status (2026-11-14):** migration started. `app/ui_qt/` now contains the Qt shell,
+  table model/proxy/status delegate, path pickers, summary/filters, detail drawer, assignment/help
+  dialogs, theme/QSS, worker, and 5 Qt tests. `run_app_qt.py` and `build_qt.ps1` exist. The first
+  one-file build is **43 MB** and launches (v3.0.0.0); it is `Facturacion MTM Qt.exe`, while the Tk
+  32-bit exe remains the rollback. Full parity/cutover is still pending.
+
 ---
 
 ## 1. Executive summary

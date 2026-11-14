@@ -13,7 +13,8 @@ y exporta el Excel final listo para subir al portal.
 
 ```
 Facturacion MTM/
-├── Facturacion MTM.exe     # ← EL PROGRAMA (doble clic para abrir la app)
+├── Facturacion MTM.exe     # 32-bit Tk rollback build (root)
+├── Facturacion MTM Qt.exe  # 64-bit PySide6 build (root, migration)
 ├── run_app.py              # entrada por Python: GUI Tkinter (rollback) o CLI
 ├── run_app_qt.py           # entrada de la nueva UI PySide6 (64-bit)
 ├── selftest.py             # benchmark de precisión contra septiembre
@@ -134,11 +135,12 @@ pip install -r requirements-ui.txt       # PySide6-Essentials 6.12 (64-bit)
 python run_app_qt.py                    # nueva UI PySide6
 $env:QT_QPA_PLATFORM="offscreen"
 & $py -m unittest discover -s tests_qt -v
-.\build_qt.ps1                          # 64-bit, dist_qt\Facturacion MTM Qt.exe
+.\build_qt.ps1                          # 64-bit, Facturacion MTM Qt.exe (root)
 ```
 
 La UI Qt es **64-bit-only** y convive con la Tk actual. La Tk queda como rollback en `run_app.py` y
-`Facturacion MTM.exe`; la nueva salida se llama `Facturacion MTM Qt.exe` y no reemplaza la raíz todavía.
+`Facturacion MTM.exe`; la nueva salida se llama `Facturacion MTM Qt.exe` en la raíz y no
+reemplaza la Tk todavía.
 
 ---
 
@@ -158,7 +160,7 @@ La UI Qt es **64-bit-only** y convive con la Tk actual. La Tk queda como rollbac
   se protegió la exportación contra sobreescribir el claim, se corrigió el estado `REVISAR`, se añadieron **39 tests**
   (`python -m unittest discover -s tests -v`) y se limpió código muerto. Ver `docs/NOTES.md`.
 - **v5 (EN MIGRACIÓN, 14-nov-2026)**: nueva UI **PySide6 + QSS** 64-bit en `app/ui_qt/`, entrada `run_app_qt.py`,
-  build `build_qt.ps1` / `dist_qt\Facturacion MTM Qt.exe`. La Tk 32-bit se mantiene como rollback. Ver
+  build `build_qt.ps1` / `Facturacion MTM Qt.exe` (43 MB). La Tk 32-bit se mantiene como rollback. Ver
   `docs/PYSIDE6_UI_MIGRATION_ANALYSIS.md`.
 
 ## Portabilidad

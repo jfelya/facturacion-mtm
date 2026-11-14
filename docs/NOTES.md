@@ -24,8 +24,8 @@ The user reviews the preview, confirms suggested drivers, and uploads the output
 - October batch: 81 claim rows, 9 summaries, 9 trip files; no matched row currently carries a
   `Facturado.` note, so the skip rule is exercised by synthetic tests and is ready for future batches.
 - **Qt migration in progress:** `app/ui_qt/` + `run_app_qt.py`; 64-bit only; Tk remains the rollback.
-  The Qt one-file build is `dist_qt\Facturacion MTM Qt.exe` (43 MB, v3.0.0.0). It is not the root
-  deliverable yet; cutover happens after parity validation.
+  The Qt one-file build is `Facturacion MTM Qt.exe` (43 MB, v3.0.0.0) in the root and
+  `dist_qt\`. It does not replace the Tk root exe yet; cutover happens after parity validation.
 
 ## 3. Environment
 
@@ -43,6 +43,7 @@ The user reviews the preview, confirms suggested drivers, and uploads the output
 ```
 Facturacion MTM/
 ├── Facturacion MTM.exe       # 32-bit Tk rollback build (root)
+├── Facturacion MTM Qt.exe    # 64-bit PySide6 build (root)
 ├── run_app.py                # Tk GUI or --cli entry point (rollback/CLI)
 ├── run_app_qt.py             # PySide6 GUI entry point (64-bit)
 ├── selftest.py               # September accuracy benchmark (not a unit test)
@@ -197,7 +198,7 @@ $env:QT_QPA_PLATFORM="offscreen"
 & $py -m unittest discover -s tests_qt -v # 5 Qt UI tests
 & $py selftest.py                        # September accuracy benchmark
 .\build.ps1                              # Tk 32-bit build + root exe
-.\build_qt.ps1                           # Qt 64-bit build, dist_qt\Facturacion MTM Qt.exe
+.\build_qt.ps1                           # Qt 64-bit build, Facturacion MTM Qt.exe (root + dist_qt)
 ```
 
 The Qt build uses `PySide6-Essentials==6.12.0` and Python 3.14.6 64-bit. It is a 64-bit one-file

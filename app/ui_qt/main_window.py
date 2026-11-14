@@ -45,6 +45,7 @@ from .delegates.row_delegate import RowDelegate
 from .delegates.status_delegate import StatusDelegate
 from .theme import icons
 from .theme.qss import apply_theme
+from .theme.window import set_dark_title_bar
 from .theme.tokens import METRICS
 from .view_model import (
     AppState,
@@ -388,6 +389,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ i18n/theme
     def _apply_theme(self):
         apply_theme(self.app, self.state.theme)
+        set_dark_title_bar(self, self.state.theme == "dark")
         if hasattr(self, "model"):
             self.model.set_theme(self.state.theme)
             self.delegate.set_theme(self.state.theme)
@@ -787,6 +789,10 @@ class MainWindow(QMainWindow):
 
     def show_help(self):
         HelpDialog(self.state.t("help_title"), self.state.t("help_body"), self).exec()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        set_dark_title_bar(self, self.state.theme == "dark")
 
     # ------------------------------------------------------------------ close
     def closeEvent(self, event):
