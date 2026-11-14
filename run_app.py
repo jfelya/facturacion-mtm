@@ -1,4 +1,4 @@
-"""Entry point for the app.
+"""Entry point for the app (PySide6 64-bit GUI + CLI).
 
 GUI:  python run_app.py
 CLI:  python run_app.py --cli <claim.xlsx> <carpeta_fuentes> [--drivers x.xlsx]
@@ -102,9 +102,8 @@ def main():
             print(__doc__)
             return 1
         return main_cli(args[1:])
-    from app.ui import main as gui_main
-    gui_main()
-    return 0
+    from app.ui_qt.application import main as gui_main
+    return gui_main() or 0
 
 
 if __name__ == "__main__":

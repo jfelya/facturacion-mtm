@@ -1,8 +1,14 @@
 # Portability / Standalone Audit — `Facturacion MTM.exe`
 
-> **2026-10-28 note:** the root EXE was rebuilt as **32-bit · v2.4.0.0** (16,595,921 bytes) and verified
-> against the engine: Excel, 9 BULK files and 36 driverlogs all matched with **0 differences**. The
-> 2.3.0.0 measurements below are the historical audit; the build toolchain is the same 32-bit one.
+> **CURRENT (2026-11-14): the app is 64-bit only.** The root `Facturacion MTM.exe` is a **64-bit (x64) ·
+> one-file · v3.0.0.0** build (~43 MB), built with PySide6 6.12 + Python 3.14.6 64-bit. It was launched
+> from the built exe and verified: the window starts maximized, dark/Spanish defaults, and the Excel, CSV,
+> BULK and driverlog outputs are identical to the engine's. Target: **Windows 10 64-bit (1809+) or Windows 11**.
+> The **32-bit audit below is historical** and describes a build that no longer exists.
+
+> **2026-10-28 note (historical):** the root EXE was once rebuilt as **32-bit · v2.4.0.0** (16,595,921 bytes) and
+> verified against the engine: Excel, 9 BULK files and 36 driverlogs all matched with **0 differences**.
+> The 2.3.0.0 measurements below are the historical audit; that build was retired on 2026-11-14.
 
 **Date:** 18-oct-2026
 **Auditor:** automated subagent (OpenCode)
@@ -15,7 +21,7 @@
 
 ## VERDICT
 
-✅ **PORTABLE / STANDALONE AND UNIVERSAL (32-BIT).** The `.exe` in the project root is a **32-bit (x86)** build, so it
+✅ **Historical verdict (32-bit build, retired):** the `.exe` audited here was a **32-bit (x86)** build that
 runs on **both 32-bit and 64-bit Windows 10/11** without Python or installs. (A 64-bit build is kept in `dist\` for
 speed; see §9.) Verified end-to-end from a bare temp folder containing **only the .exe**, against real project data —
 Excel, BULK UPLOAD and Word/driverlog paths all pass, with output **identical** to the Python engine.
@@ -138,7 +144,7 @@ This test proves the two heaviest native dependencies (openpyxl, lxml) both load
 - The one-file bootloader extracts the payload to `%TEMP%\_MEIxxxxx` and **cleans it up on exit** — no leftover `_MEI*`
   directory was left behind. So there is no temp-directory leak, but each run pays the extraction cost (§6).
 
-## 5. Minimum Windows version — current 32-bit universal build
+## 5. Historical: minimum Windows version (32-bit build)
 
 > The measurements in this section were taken on the earlier 64-bit build. The current root EXE is
 > 32-bit; see §9 for the current build and verification.
@@ -212,7 +218,9 @@ process at a time. Helpers used during this audit live in `%TEMP%\opencode\` (`i
 
 ---
 
-## 9. 32-bit universal build — DONE (18-oct)
+## 9. Historical: 32-bit universal build — RETIRED (2026-11-14)
+
+> This section documents the old 32-bit build. It is kept for history only; **do not rebuild or ship it**.
 
 The app now ships as a **32-bit (x86)** one-file EXE, which runs on **both 32-bit and 64-bit Windows 10/11** (via WOW64).
 A 64-bit build is also kept because it is slightly faster on modern machines.
@@ -244,11 +252,7 @@ A 64-bit build is also kept because it is slightly faster on modern machines.
 | Driverlogs (.docx, exercises 32-bit lxml) | ✅ generated |
 | 64-bit build (rebuilt with same source) | ✅ exit 0, Excel + 9 BULKs |
 
-### 9.4 Rebuilding later
+### 9.4 Rebuilding later (historical — superseded)
 ```powershell
-$py32 = "$env:TEMP\opencode\py32\python\python.exe"   # 32-bit portable
-& $py32 -m PyInstaller "Facturacion MTM.spec" --noconfirm --clean --distpath dist32 --workpath build32
-Copy-Item "dist32\Facturacion MTM.exe" "Facturacion MTM.exe" -Force
+# Retired: the app is now 64-bit only. Use .\build.ps1 from the project root.
 ```
-Keep the root EXE 32-bit so it remains universal. The `%TEMP%\opencode\py32` toolchain is disposable; re-download the
-zip above if it was cleaned.

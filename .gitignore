@@ -8,11 +8,7 @@ output/
 
 # ---- Generated output & build artifacts ----
 build/
-build32/
-build_qt/
 dist/
-dist32/
-dist_qt/
 *.exe
 
 # ---- Python ----

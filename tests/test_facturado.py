@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 from app.bulk import generate_bulks, template_path
 from app.driverlogs import generate_driverlogs
 from app.report import report_text
-from app.ui import status_of
+from app.status import status_of
 from app.writer import write_output
 from tests.fixtures import make_docx_template
 

@@ -121,6 +121,18 @@ class UiSmokeTests(unittest.TestCase):
         self.assertEqual(dialog.selected["num"], "200")
         dialog.deleteLater()
 
+    def test_generate_pdfs_reports_merge(self):
+        days = self.root / "days"
+        days.mkdir()
+        self.win.state.days_root = str(days)
+        fake = {"converted": 2, "skipped": 0, "merged": 1, "pages": 2,
+                "merged_files": [], "errors": []}
+        with patch("app.ui_qt.main_window.process_days", return_value=fake), \
+                patch("app.ui_qt.main_window.messages.info") as info:
+            self.win.generate_pdfs()
+        self.assertTrue(info.called)
+        self.assertIn("PDFs generados", info.call_args.args[1])
+
     def test_output_actions_write_engine_files(self):
         days = self.root / "days"
         templates = self.root / "templates"

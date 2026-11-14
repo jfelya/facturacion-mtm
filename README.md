@@ -13,40 +13,33 @@ y exporta el Excel final listo para subir al portal.
 
 ```
 Facturacion MTM/
-├── Facturacion MTM.exe     # 32-bit Tk rollback build (root)
-├── Facturacion MTM Qt.exe  # 64-bit PySide6 build (root, migration)
-├── run_app.py              # entrada por Python: GUI Tkinter (rollback) o CLI
-├── run_app_qt.py           # entrada de la nueva UI PySide6 (64-bit)
+├── Facturacion MTM.exe     # build 64-bit one-file (raíz, v3.0.0.0)
+├── run_app.py              # entrada: GUI (PySide6) o CLI
 ├── selftest.py             # benchmark de precisión contra septiembre
-├── build.ps1               # build PyInstaller Tk 32-bit (rollback)
-├── build_qt.ps1            # build PyInstaller Qt 64-bit
-├── Facturacion MTM.spec    # receta PyInstaller Tk
-├── Facturacion MTM Qt.spec # receta PyInstaller Qt
-├── requirements.txt        # dependencias del motor/CLI
+├── build.ps1               # build PyInstaller 64-bit
+├── Facturacion MTM.spec    # receta PyInstaller
+├── requirements.txt        # dependencias del motor/CLI (incl. pypdf, pywin32)
 ├── requirements-ui.txt     # PySide6-Essentials
-├── requirements-build.txt  # motor + PyInstaller
-├── requirements-ui-build.txt # motor + PySide6 + PyInstaller
-├── version_info.txt        # versión del build Tk
-├── version_info_qt.txt     # versión del build Qt
-├── assets/                 # icon.png / icon.ico (marca de MTM) + ui/ (iconos del kit)
+├── requirements-build.txt  # motor + PySide6 + PyInstaller
+├── version_info.txt        # versión del build
+├── assets/                 # icon.png / icon.ico (marca de MTM)
 │
 ├── app/                    # el motor (Python) + UI
 │   ├── common.py           #   normalización / fechas / horas / notas / helpers
-│   ├── status.py           #   estado visual de una fila (compartido Tk/Qt)
+│   ├── status.py           #   estado visual de una fila
 │   ├── parsers.py          #   reconoce y lee los 4 tipos de archivo POR ESTRUCTURA
 │   ├── filler.py           #   matching, notas, aprobación, sugerencias, reparto, PU/DropOff
 │   ├── pipeline.py         #   orquesta: escanear carpeta → índices → rellenar
 │   ├── report.py           #   reporte en pantalla + CSV
 │   ├── writer.py           #   salida EXACTA (una hoja por día, 10 columnas, ordenado por driver)
 │   ├── driverlogs.py       #   llena los driverlogs .docx por driver/día (python-docx)
+│   ├── driverpdf.py        #   driverlogs .docx → PDF + un «<día> merged.pdf» por día
 │   ├── bulk.py             #   genera el BULK UPLOAD .xlsx por día (plantilla bundleada)
 │   ├── strings.py          #   textos ES/EN de la UI
-│   ├── uikit/              #   design system Tkinter (rollback)
-│   ├── ui.py               #   UI Tkinter (rollback)
-│   └── ui_qt/              #   nueva UI PySide6 (models, delegates, theme, dialogs)
+│   └── ui_qt/              #   UI PySide6 (models, delegates, theme, dialogs)
 │
 ├── tests/                  # unittest + fixtures sintéticas (no necesitan data/)
-├── tests_qt/               # tests de la UI PySide6
+├── tests_qt/               # tests de la UI
 ├── data/
 │   ├── base/               # DATOS DE PRODUCCIÓN (el trabajo real)
 │   └── test/               # DATOS DE PRUEBA / referencia
@@ -57,7 +50,6 @@ Facturacion MTM/
 │   └── PORTABILITY.md      # portabilidad / builds
 │
 ├── dist/                   # (se genera al compilar) build 64-bit
-├── dist32/                 # (se genera al compilar) build 32-bit
 └── build/                  # (se genera al compilar) artefactos temporales de PyInstaller
 ```
 
@@ -93,10 +85,12 @@ cualquier chat futuro tenga acceso.
     **`<día>\Docs\<día> <NUM>.docx`** (ej. `10-05 200.docx`). **No toca las plantillas**.
 11. **Generar BULK UPLOAD** → escribe **`<día>\BULK UPLOAD MM-DD-YYYY.xlsx`** (uno por día) listo para subir al
     portal, con el mismo formato de la plantilla. Ver `docs/NOTES.md`.
+12. **Generar PDFs (merged)** → convierte cada driverlog a PDF (`<día>\Docs\<día> <NUM>.pdf`) y crea
+    **`<día>\<día> merged.pdf`** con todos los drivers del día, en orden de número (10, 20, 220…).
+    Necesita **Microsoft Word** instalado; si los PDF ya existen, solo combina.
 
 > **Idioma y tema:** arriba a la derecha hay dos botones — uno de **idioma** (bandera 🇻🇪/🇺🇸, español por defecto)
-> y uno de **tema** (sol/luna, **modo oscuro por defecto**). Los iconos son PNG nítidos (`assets/ui/`, generados con
-> `assets/ui/make_icons.py`). Un clic en cada uno y listo.
+> y uno de **tema** (sol/luna, **modo oscuro por defecto**). Un clic en cada uno y listo.
 >
 > **PU Time / DropOff Time:** el archivo de viajes trae la hora de la **cita** (dropoff), no la recogida. El app
 > fija el **DropOff** 1–5 min antes de la cita y estima el pickup con `DropOff − (14 min + 1.4×millas ± 3 min)`,
@@ -120,27 +114,23 @@ python selftest.py                # mide precisión contra septiembre
 ### Opción C — tests y build
 ```powershell
 $py = "C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe"
-& $py -m unittest discover -s tests -v   # 39 tests, fixtures sintéticas (no necesita data/)
+& $py -m unittest discover -s tests -v   # 47 tests, fixtures sintéticas (no necesita data/)
+$env:QT_QPA_PLATFORM="offscreen"
+& $py -m unittest discover -s tests_qt -v  # 6 tests de la UI
 & $py selftest.py                        # benchmark de septiembre
-.\build.ps1                              # PyInstaller + copia el exe a la raíz
+.\build.ps1                              # PyInstaller 64-bit + copia el exe a la raíz
 ```
 
-`tests/` usa solo la librería estándar. El build por defecto usa el Python 32-bit portable en
-`%TEMP%\opencode\py32\python\python.exe`; si no existe, pasa `-Python <ruta>` o construye 64-bit para
-la prueba. El exe de la raíz sigue siendo el build 32-bit universal.
+`tests/` usa solo la librería estándar. El build usa el **Python 3.14 64-bit**
+(`C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe`); si está en otra ruta, pasa
+`-Python <ruta>`. El exe de la raíz es **64-bit one-file**.
 
-### Opción D — nueva UI Qt (64-bit, en migración)
+### Opción D — dependencias de la UI
 ```powershell
 pip install -r requirements-ui.txt       # PySide6-Essentials 6.12 (64-bit)
-python run_app_qt.py                    # nueva UI PySide6
-$env:QT_QPA_PLATFORM="offscreen"
-& $py -m unittest discover -s tests_qt -v
-.\build_qt.ps1                          # 64-bit, Facturacion MTM Qt.exe (root)
 ```
 
-La UI Qt es **64-bit-only** y convive con la Tk actual. La Tk queda como rollback en `run_app.py` y
-`Facturacion MTM.exe`; la nueva salida se llama `Facturacion MTM Qt.exe` en la raíz y no
-reemplaza la Tk todavía.
+La app es **64-bit-only** (Windows 10 64-bit 1809+ / Windows 11). No hay build de 32 bits.
 
 ---
 
@@ -153,29 +143,26 @@ reemplaza la Tk todavía.
   trip files (Proceed/Cancel), chequeo de **tiempos A/B** (B no puede empezar antes que A) y apertura maximizada.
 - **v3 (HECHO)**: **BULK UPLOAD** por día — `<día>\BULK UPLOAD MM-DD-YYYY.xlsx` con el formato exacto de la plantilla
   (usado por el portal). Botón "Generar BULK UPLOAD" / CLI `--gen-bulk`. Ver `docs/NOTES.md`.
-- **v3.1 (HECHO)**: **32-bit universal** (corre en Windows de 32 y 64 bits).
-  La firma digital quedó **pendiente** (por ahora el exe va sin firmar).
+- **v3.1 (RETIRADO)**: existió un build **32-bit universal**; desde v5 la app es **64-bit-only**.
 - **v4 (HECHO, 28-oct-2026)**: auditoría/revamp. El reparto ya **no mueve filas con match/nota/preferencia**
   (solo sugeridas), las filas con nota `Facturado.` se **omiten** del Excel/BULK/driverlogs y salen en el reporte,
   se protegió la exportación contra sobreescribir el claim, se corrigió el estado `REVISAR`, se añadieron **39 tests**
   (`python -m unittest discover -s tests -v`) y se limpió código muerto. Ver `docs/NOTES.md`.
-- **v5 (EN MIGRACIÓN, 14-nov-2026)**: nueva UI **PySide6 + QSS** 64-bit en `app/ui_qt/`, entrada `run_app_qt.py`,
-  build `build_qt.ps1` / `Facturacion MTM Qt.exe` (43 MB). La Tk 32-bit se mantiene como rollback. Ver
+- **v5 (HECHO, 14-nov-2026)**: UI **PySide6 + QSS** en `app/ui_qt/`, **64-bit-only**, build único
+  `Facturacion MTM.exe` (v3.0.0.0, 45 MB). La UI Tk y el build de 32 bits **fueron retirados**. Ver
   `docs/PYSIDE6_UI_MIGRATION_ANALYSIS.md`.
 
 ## Portabilidad
 
-El `.exe` de la **raíz** es **standalone / one-file y 32-bit (x86)**: cópialo a cualquier PC con **Windows 10/11 de
-32 o 64 bits** y funciona sin instalar Python ni dependencias. Las builds `dist\` (64-bit) y `dist32\` (32-bit) se
-regeneran al compilar con PyInstaller. Ver `docs/PORTABILITY.md` (verificado copiando **solo el exe** a una carpeta temporal: Excel + BULK UPLOAD +
-driverlogs OK, salidas idénticas al motor).
+El `.exe` de la **raíz** es **standalone / one-file y 64-bit (x64)**: cópialo a cualquier PC con **Windows 10 64-bit
+(1809+) o Windows 11** y funciona sin instalar Python ni dependencias. La build `dist\` se regenera al compilar con
+PyInstaller. Ver `docs/PORTABILITY.md`.
 
 **Firma digital:** por ahora el `.exe` va **sin firmar**. Windows puede mostrar "Unknown publisher" la primera vez →
-*Más información → Ejecutar de todas formas*. Para usarlo en otra PC, copia **`Facturacion MTM.exe`**. La firma de
-código queda **pendiente** (ver `docs/HISTORY.md`).
+*Más información → Ejecutar de todas formas*. La firma de código queda **pendiente** (ver `docs/HISTORY.md`).
 
-> **Importante:** el exe de la raíz fue **recompilado el 28-oct-2026** como **32-bit · v2.4.0.0** y verificado
-> con el batch de octubre: Excel, 9 BULK y 36 driverlogs **idénticos al motor** (0 diferencias). Si cambias código,
+> **Importante:** el exe de la raíz se recompiló el **14-nov-2026** como **64-bit · v3.0.0.0** y se verificó:
+> arranca maximizado y sus salidas (Excel, CSV, BULK y driverlogs) son idénticas a las del motor. Si cambias código,
 > vuelve a ejecutar `.\build.ps1`.
 
 La app abre **maximizada**. Si no hay archivos de viajes en la carpeta de fuentes, avisa antes de procesar

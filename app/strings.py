@@ -1,4 +1,4 @@
-"""Bilingual UI strings for the Tkinter app."""
+"""Bilingual UI strings for the app."""
 
 STRINGS = {
     "es": {
@@ -30,6 +30,7 @@ STRINGS = {
         "btn_export": "Exportar Excel…",
         "btn_csv": "Guardar reporte (CSV)…",
         "btn_driverlogs": "Generar driverlogs (.docx)",
+        "btn_pdfs": "Generar PDFs (merged)",
         "btn_bulk": "Generar BULK UPLOAD",
         "btn_help": "¿Qué archivos necesito?",
         "tab_preview": "Vista previa",
@@ -79,6 +80,9 @@ STRINGS = {
                          "¿Continuar de todas formas? (Proceed) o Cancelar para agregarlos."),
         "dl_title": "Driverlogs generados",
         "dl_body": "Se generaron {n} driverlog(s) en:\n{root}\n\nSin plantilla (omitidos): {skipped}\nErrores: {errors}",
+        "pdf_title": "PDFs generados",
+        "pdf_body": "Convertidos: {converted} · Días combinados: {merged} · Páginas: {pages}\n{root}\n\nErrores: {errors}",
+        "pdf_report": "PDF: {converted} convertidos, {merged} días combinados, {pages} páginas, errores: {errors}",
         "bulk_title": "BULK UPLOAD generados",
         "bulk_body": ("Se generaron {n} archivo(s) «BULK UPLOAD <fecha>.xlsx» en:\n{root}\n\n"
                       "Filas omitidas (sin driver / no facturar): {excluded}\nErrores: {errors}"),
@@ -140,6 +144,7 @@ STRINGS = {
         "btn_export": "Export Excel…",
         "btn_csv": "Save report (CSV)…",
         "btn_driverlogs": "Generate driverlogs (.docx)",
+        "btn_pdfs": "Generate PDFs (merged)",
         "btn_bulk": "Generate BULK UPLOAD",
         "btn_help": "What files do I need?",
         "tab_preview": "Preview",
@@ -189,6 +194,9 @@ STRINGS = {
                          "Proceed anyway? (or Cancel to add them)"),
         "dl_title": "Driverlogs generated",
         "dl_body": "Generated {n} driverlog(s) in:\n{root}\n\nNo template (skipped): {skipped}\nErrors: {errors}",
+        "pdf_title": "PDFs generated",
+        "pdf_body": "Converted: {converted} · Days merged: {merged} · Pages: {pages}\n{root}\n\nErrors: {errors}",
+        "pdf_report": "PDF: {converted} converted, {merged} days merged, {pages} pages, errors: {errors}",
         "bulk_title": "BULK UPLOAD generated",
         "bulk_body": ("Generated {n} «BULK UPLOAD <date>.xlsx» file(s) in:\n{root}\n\n"
                       "Rows skipped (no driver / not billed): {excluded}\nErrors: {errors}"),

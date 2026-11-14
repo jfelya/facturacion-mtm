@@ -2,7 +2,7 @@ import unittest
 from datetime import time as dtime
 
 from app.filler import fill_claim
-from app.ui import status_of
+from app.status import status_of
 
 
 class StatusTests(unittest.TestCase):

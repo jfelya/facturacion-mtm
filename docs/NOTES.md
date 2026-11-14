@@ -1,6 +1,6 @@
 # Facturación MTM — Current Project Notes
 
-> **Last updated:** 2026-10-29. This is the current source of truth.
+> **Last updated:** 2026-11-14. This is the current source of truth.
 > History and old decisions: `docs/HISTORY.md`. Time calibration: `docs/PU_TIME_FINDINGS.md`.
 > Portability/build details: `docs/PORTABILITY.md`.
 
@@ -19,42 +19,37 @@ The user reviews the preview, confirms suggested drivers, and uploads the output
 
 - v4 audit/revamp: matching accuracy restored, already-billed rows skipped, export overwrite guarded,
   review flags visible, empty allowed-driver set fixed, dead code removed, tests added.
-- 39 engine `unittest` tests pass; 6 PySide6 UI tests pass (`tests_qt/`, offscreen).
+- 47 engine `unittest` tests pass; 7 PySide6 UI tests pass (`tests_qt/`, offscreen).
 - September benchmark: `first_row_B` **46/70 exact (65.7%)** with the current default settings.
 - October batch: 81 claim rows, 9 summaries, 9 trip files; no matched row currently carries a
   `Facturado.` note, so the skip rule is exercised by synthetic tests and is ready for future batches.
-- **Qt migration in progress:** `app/ui_qt/` + `run_app_qt.py`; 64-bit only; Tk remains the rollback.
-  The Qt one-file build is `Facturacion MTM Qt.exe` (43 MB, v3.0.0.0) in the root and
-  `dist_qt\`. It does not replace the Tk root exe yet; cutover happens after parity validation.
+- **UI: PySide6 (64-bit only).** `app/ui_qt/` is the only UI; the Tk UI and the 32-bit build were
+  removed on 2026-11-14. The one-file build is `Facturacion MTM.exe` (45 MB, v3.0.0.0) in the root and
+  `dist\`. Parity was verified: Excel, CSV, BULK and driverlogs produced through the UI are identical
+  to the engine's.
 
 ## 3. Environment
 
-- Windows 10/11. The root `Facturacion MTM.exe` is a **32-bit one-file** build (runs on 32- and
-  64-bit Windows), version **2.4.0.0** (rebuilt 2026-10-28). A 64-bit build is optional and kept in
-  `dist\` when built.
+- Windows 10 64-bit (1809+) / Windows 11. The root `Facturacion MTM.exe` is a **64-bit one-file**
+  build, version **3.0.0.0**. There is no 32-bit build.
 - Python 3.14.6 on this machine:
   `C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe`.
-- Runtime: `openpyxl==3.1.5`, `python-docx==1.2.0`, Tkinter (stdlib).
+- Runtime: `openpyxl==3.1.5`, `python-docx==1.2.0`, `PySide6-Essentials==6.12.0`, `pypdf==7.1.0`,
+  `pywin32==312` (Word COM, for driverlog PDFs).
 - Build: `pyinstaller==6.22.3` (`requirements-build.txt`).
-- Icon generation (`assets/ui/make_icons.py`) needs Pillow, dev-only. Pillow is not a runtime dep.
 
 ## 4. Project map
 
 ```
 Facturacion MTM/
-├── Facturacion MTM.exe       # 32-bit Tk rollback build (root)
-├── Facturacion MTM Qt.exe    # 64-bit PySide6 build (root)
-├── run_app.py                # Tk GUI or --cli entry point (rollback/CLI)
-├── run_app_qt.py             # PySide6 GUI entry point (64-bit)
+├── Facturacion MTM.exe       # 64-bit one-file build (root)
+├── run_app.py                # GUI (PySide6) or --cli entry point
 ├── selftest.py               # September accuracy benchmark (not a unit test)
-├── build.ps1                 # Tk 32-bit PyInstaller build
-├── build_qt.ps1              # Qt 64-bit PyInstaller build
-├── Facturacion MTM.spec      # Tk build recipe
-├── Facturacion MTM Qt.spec   # Qt build recipe
+├── build.ps1                 # 64-bit PyInstaller build
+├── Facturacion MTM.spec      # build recipe
 ├── requirements.txt          # runtime (engine/CLI)
 ├── requirements-ui.txt       # PySide6-Essentials
-├── requirements-build.txt    # runtime + PyInstaller
-├── requirements-ui-build.txt # runtime + PySide6 + PyInstaller
+├── requirements-build.txt    # runtime + PySide6 + PyInstaller
 ├── app/
 │   ├── common.py             # normalization, dates/times, notes, shared helpers
 │   ├── status.py             # UI-neutral status_of(row)
@@ -64,15 +59,14 @@ Facturacion MTM/
 │   ├── writer.py             # final ClaimInformation Excel
 │   ├── bulk.py               # BULK UPLOAD Excel
 │   ├── driverlogs.py         # Word driverlogs
+├── driverpdf.py          # driverlog DOCX -> PDF + one merged PDF per day
 │   ├── report.py             # text/CSV report
 │   ├── strings.py            # ES/EN UI text
-│   ├── uikit/                # Tkinter design tokens/widgets (rollback)
-│   ├── ui.py                 # Tkinter UI (rollback)
-│   └── ui_qt/                # PySide6 UI (migration)
+│   └── ui_qt/                # PySide6 UI
 ├── tests/                    # engine unittest + synthetic fixtures
 ├── tests_qt/                 # PySide6 UI tests
-├── docs/                     # NOTES, HISTORY, calibration, portability, Qt analysis
-├── assets/                   # app icon + UI PNGs
+├── docs/                     # NOTES, HISTORY, calibration, portability, UI analysis
+├── assets/                   # app icon
 └── data/                     # production/test data (gitignored)
 ```
 
@@ -115,6 +109,11 @@ can count toward a driver's workload but do not become claim rows.
 - Templates are never modified; only the data rows are written.
 - `FACTURADO` rows and drivers without a template are skipped.
 
+### Driverlog PDFs
+- **Generar PDFs** exports each `Docs\<day> <NUM>.docx` to `Docs\<day> <NUM>.pdf` (needs Microsoft Word)
+  and writes one `<day> merged.pdf` in the day folder, ordered by driver number (numeric: 10, 20, 220…).
+- Works from existing PDFs even when the DOCX is gone; already-up-to-date PDFs are not re-exported.
+
 ### Report
 - Screen report + optional CSV: sources, stats, warnings, review items, suggested drivers,
   manual choices, no-bill rows, and already-billed rows.
@@ -152,9 +151,11 @@ can count toward a driver's workload but do not become claim rows.
    It stays in the Excel with a blank driver but is not included in BULK or driverlogs.
 8. **County.** Drivers only serve their own county (VOLUSIA or MARION). County comes from the resumen
    driver, else the other leg, else the trip's pickup city.
-9. **Soft balancing.** Only **unmatched/suggested** rows may move: never a row matched by Trip ID,
-   order, or note, and never a preferred driver. If a driver is over 3 trips but every row is locked,
-   the report says `REPARTO BLOQUEADO`. Drivers may exceed 3 when matches win.
+9. **Soft balancing.** No driver ends the day above 3 trips while another approved driver of the
+   same county is below target (2). Extra trips are handed to the least-busy same-county driver and
+   flagged `BALANCEADO`; the Dalia preference and already-billed/no-bill rows never move. Balancing
+   never crosses counties. If every same-county alternative is already at target, the row stays and
+   the report lists it.
 10. **Milage fallback.** If the resumen has no miles, use the trip file's `Trip Mileage` for that Trip
     Number (covers Dalia).
 11. **PU/DropOff.** The trip file `Time` is the appointment, not the pickup:
@@ -165,17 +166,16 @@ can count toward a driver's workload but do not become claim rows.
 
 ## 8. UI and CLI
 
-**Tk rollback:** `python run_app.py` (or double-click the 32-bit exe).  
-**Qt UI (64-bit, migration):** `python run_app_qt.py` after installing `requirements-ui.txt`.
+**GUI:** `python run_app.py` (or double-click `Facturacion MTM.exe`), after installing `requirements-ui.txt`.
 
-Both UIs use the same engine and the same steps: claim → sources folder → optional drivers file → optional
+The UI uses the engine with these steps: claim → sources folder → optional drivers file → optional
 driverlog templates → optional days root → **Procesar**. Review the colored preview, use **Asignar driver**
-for suggested/empty rows, then **Exportar Excel**, **Generar driverlogs**, **Generar BULK UPLOAD**.
+for suggested/empty rows, then **Exportar Excel**, **Generar driverlogs**, **Generar PDFs (merged)**,
+**Generar BULK UPLOAD**.
 
-Qt layout: left source/options rail, summary/status chips, Preview/Report tabs, bottom selected-row detail
-drawer, status bar. The Tk UI keeps its three-tab layout. Status colors: OK, NOTA, SUGERIDO, BALANCEADO,
-REVISAR, ELEGIR, NO FACTURAR, FACTURADO, SIN DATO. Language (ES/EN) and dark/light are header toggles.
-The Qt UI is 64-bit-only; Tk remains the 32-bit rollback until cutover.
+Layout: left source/options rail, summary/status chips, Preview/Report tabs, bottom selected-row detail
+drawer, status bar. Status colors: OK, NOTA, SUGERIDO, BALANCEADO, REVISAR, ELEGIR, NO FACTURAR,
+FACTURADO, SIN DATO. Language (ES/EN) and dark/light are header toggles. 64-bit only.
 
 CLI examples (unchanged):
 
@@ -193,24 +193,22 @@ of crashing.
 
 ```powershell
 $py = "C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe"
-& $py -m unittest discover -s tests -v   # 39 engine tests, synthetic fixtures, no data/ needed
+& $py -m unittest discover -s tests -v   # 47 engine tests, synthetic fixtures, no data/ needed
 $env:QT_QPA_PLATFORM="offscreen"
-& $py -m unittest discover -s tests_qt -v # 6 Qt UI tests
+& $py -m unittest discover -s tests_qt -v # 7 Qt UI tests
 & $py selftest.py                        # September accuracy benchmark
-.\build.ps1                              # Tk 32-bit build + root exe
-.\build_qt.ps1                           # Qt 64-bit build, Facturacion MTM Qt.exe (root + dist_qt)
+.\build.ps1                              # 64-bit build + root exe
 ```
 
-The Qt build uses `PySide6-Essentials==6.12.0` and Python 3.14.6 64-bit. It is a 64-bit one-file
-build (~43 MB in the first build); the Tk 32-bit root exe remains in place until the Qt parity run is
-accepted. See `docs/PYSIDE6_UI_MIGRATION_ANALYSIS.md` for the full analysis.
+The build uses `PySide6-Essentials==6.12.0` and Python 3.14.6 64-bit. It is a 64-bit one-file
+build (~45 MB); `upx=False` is deliberate (UPX can break Qt DLLs). See
+`docs/PYSIDE6_UI_MIGRATION_ANALYSIS.md` for the full analysis.
 
 `tests/` uses stdlib `unittest` only. `selftest.py` is a benchmark, not a pass/fail gate; its current
 `first_row_B` result is 46/70 exact.
 
-The build script defaults to the portable 32-bit Python at `%TEMP%\opencode\py32\python\python.exe`.
-If that path does not exist, pass `-Python <path>` or build a 64-bit exe for a smoke test; the root exe
-remains the 32-bit universal build.
+The build script defaults to `C:\Users\Fely\AppData\Local\Python\pythoncore-3.14-64\python.exe`.
+If that path does not exist, pass `-Python <path>`.
 
 ## 10. Data and git
 
@@ -223,7 +221,9 @@ remains the 32-bit universal build.
 ## 11. Known limitations / open questions
 
 - The exact meaning of “separar viajes MTM de ACCESS2CARE” (training step 2) is still open.
-- Balancing intentionally does less now: matched drivers can exceed 3 trips; the report lists them.
+- Balancing caps a driver at 3 trips when another same-county driver is below 2. If the alternative
+  is also at target, the overload stays and the report lists it.
+- Driverlog PDFs need Microsoft Word installed (COM). Merging existing PDFs does not.
 - The `Facturado.` skip applies only when the matched resumen row carries that note. The current
   October batch has no such matched row.
 - A future resumen that uses driver `999` directly could still be accepted if 999 is in the drivers

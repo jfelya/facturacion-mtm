@@ -1,7 +1,7 @@
 """Qt design tokens.
 
-Values are the same semantic palette as the Tk uikit until the Tk UI is removed.
-The Qt module deliberately does not import `app.uikit` (which imports tkinter), so
+Values are the semantic palette inherited from the retired Tk UI.
+The Qt module deliberately does not import tkinter, so
 the Qt build does not pull Tcl/Tk into the executable.
 """
 

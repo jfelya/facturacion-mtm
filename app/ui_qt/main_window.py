@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 
 from ..bulk import generate_bulks, report_lines as bulk_lines
 from ..driverlogs import generate_driverlogs, report_lines as driverlog_lines
+from ..driverpdf import DriverPdfError, process_days
 from ..pipeline import run_job, scan_sources
 from ..report import report_text, write_report_csv
 from ..status import status_of
@@ -270,9 +271,11 @@ class MainWindow(QMainWindow):
         self.btn_export = QPushButton()
         self.btn_csv = QPushButton()
         self.btn_driverlogs = QPushButton()
+        self.btn_pdfs = QPushButton()
         self.btn_bulk = QPushButton()
         for button, slot in ((self.btn_export, self.export_excel), (self.btn_csv, self.save_csv),
                              (self.btn_driverlogs, self.generate_driverlogs),
+                             (self.btn_pdfs, self.generate_pdfs),
                              (self.btn_bulk, self.generate_bulk)):
             button.clicked.connect(slot)
             actions.addWidget(button)
@@ -429,6 +432,7 @@ class MainWindow(QMainWindow):
         self.btn_export.setText(t("btn_export"))
         self.btn_csv.setText(t("btn_csv"))
         self.btn_driverlogs.setText(t("btn_driverlogs"))
+        self.btn_pdfs.setText(t("btn_pdfs"))
         self.btn_bulk.setText(t("btn_bulk"))
         self.btn_help.setText(t("btn_help"))
         self.btn_clear_filters.setText(t("filter_clear"))
@@ -554,7 +558,8 @@ class MainWindow(QMainWindow):
 
     def _update_actions(self):
         enabled = bool(self.state.result) and not getattr(self, "_busy", False)
-        for button in (self.btn_export, self.btn_csv, self.btn_driverlogs, self.btn_bulk):
+        for button in (self.btn_export, self.btn_csv, self.btn_driverlogs,
+                       self.btn_pdfs, self.btn_bulk):
             button.setEnabled(enabled)
 
     # ------------------------------------------------------------------ render
@@ -768,6 +773,26 @@ class MainWindow(QMainWindow):
         messages.info(self, self.state.t("dl_title"), self.state.t(
             "dl_body", n=len(result["created"]), root=root,
             skipped=len(result["skipped"]), errors=len(result["errors"])))
+
+    def generate_pdfs(self):
+        root = self.state.days_root.strip() or self.state.sources_folder.strip()
+        if not root or not Path(root).is_dir():
+            messages.error(self, self.state.t("err_title"), self.state.t("err_daysroot"))
+            return
+        try:
+            result = process_days(root)
+        except DriverPdfError as exc:
+            messages.error(self, self.state.t("err_title"), str(exc))
+            return
+        except Exception as exc:  # noqa: BLE001
+            messages.error(self, self.state.t("err_title"), f"{type(exc).__name__}: {exc}")
+            return
+        self.report.appendPlainText("\n\n" + self.state.t(
+            "pdf_report", converted=result["converted"], merged=result["merged"],
+            pages=result["pages"], errors=len(result["errors"])))
+        messages.info(self, self.state.t("pdf_title"), self.state.t(
+            "pdf_body", converted=result["converted"], merged=result["merged"],
+            pages=result["pages"], errors=len(result["errors"]), root=root))
 
     def generate_bulk(self):
         if not self.state.result:

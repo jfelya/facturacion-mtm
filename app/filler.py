@@ -108,6 +108,7 @@ def _assign(row, x, drivers, warnings, review, stats, billed):
     allowed = _allowed_drivers(drivers)
     if driver and drivers and driver not in allowed:
         driver = ""
+        row["substituted"] = True      # auto-assigned later; balancing may redistribute it
         row["flag"] = "revisar"
         warnings.append(f"{row['date']} {row['member']} {row['trip']}: driver {number} no está aprobado/sin "
                         f"driverlog -> se reemplaza por un driver libre de ese día (revisar)")
@@ -159,20 +160,18 @@ def _allowed_drivers(drivers):
 
 
 def _can_balance(row):
-    """Only unmatched rows may be moved; matches, notes and preferred drivers win."""
+    """Rows of an overloaded driver may be moved; the Dalia preference always wins."""
     member = (row.get("member") or "").upper()
     return (row.get("driver")
             and row.get("flag") not in ("nofacturar", "facturado")
-            and not row.get("src_resumen")
-            and not row.get("note_drv")
             and member not in PREFERRED_DRIVER)
 
 
 def _balance_drivers(claim, drivers, stats, review):
     """Soft balancing: no driver should end the day with too many trips.
 
-    For each day, any driver ABOVE `BALANCE_MAX` gives extra trips (preferring ones NOT pinned
-    by a manual note) to approved drivers of the SAME county that are BELOW `BALANCE_TARGET`.
+    For each day, any driver ABOVE `BALANCE_MAX` gives extra trips to approved drivers of the
+    SAME county that are BELOW `BALANCE_TARGET` (the Dalia preference is never moved).
     Moved rows are flagged 'balanceado' so the user reviews them. Never crosses counties.
     """
     if not drivers:
@@ -473,11 +472,16 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
         r["county"] = (member_county.get((r["date"], r["member"]))
                        or _city_county(city_by_trip.get(r["trip"].upper(), "")))
 
+    live_counts = {}
+    orig_counts = {}
+    approved = []
     if needs and drivers:
         allowed = _allowed_drivers(drivers)
         approved = [n for n in sorted(allowed, key=numeric_key) if n not in PLACEHOLDER_DRIVERS]
         for d in sorted({r["date"] for r in needs}):
-            counts = ((driver_usage or {}).get(d) or {}).get("count", {})
+            counts = dict(((driver_usage or {}).get(d) or {}).get("count", {}))
+            live_counts[d] = counts
+            orig_counts[d] = dict(counts)
             for county in sorted({r.get("county") or "" for r in needs if r["date"] == d}):
                 pool = [n for n in approved
                         if not county or (drivers["table"].get(n, {}).get("county") or "") == county]
@@ -500,11 +504,24 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
                             f"resumen del día y no es Dalia -> NO se factura (revisar)")
             continue
         cands = list(driver_candidates.get((r["date"], r.get("county") or "")) or [])
+        # rank on live counts so successive suggestions spread instead of piling on one driver;
+        # "free" still means free in the day's resumen, so preferred drivers keep priority
+        if live_counts.get(r["date"]) is not None:
+            counts = live_counts[r["date"]]
+            orig = orig_counts.get(r["date"], {})
+            county = r.get("county") or ""
+            pool = [n for n in approved
+                    if not county or (drivers["table"].get(n, {}).get("county") or "") == county]
+            ranked = sorted(pool, key=lambda n: (0 if orig.get(n, 0) == 0 else 1,
+                                                 counts.get(n, 0), numeric_key(n)))
+            cands = [{"num": n, "name": drivers["table"][n]["name"],
+                      "count": counts.get(n, 0), "free": orig.get(n, 0) == 0}
+                     for n in ranked]
         pref = PREFERRED_DRIVER.get((r.get("member") or "").upper())
         # ranking: drivers that are FREE that day first, then the member's usual driver (e.g. Dalia->349),
         # then fewest trips. All candidates are already limited to the trip's county.
         if pref:
-            cands.sort(key=lambda c: (0 if c["count"] == 0 else 1, 0 if c["num"] == pref else 1,
+            cands.sort(key=lambda c: (0 if c["free"] else 1, 0 if c["num"] == pref else 1,
                                       c["count"], numeric_key(c["num"])))
         best = cands[0] if cands else None
         # only suggest when we actually know that day's workload (a resumen exists for it)
@@ -515,6 +532,8 @@ def fill_claim(claim, resumen_index, trips_by_date, drivers,
             r["license"] = info.get("license", "")
             r["vin"] = info.get("vin", "")
             r["flag"] = "sugerido"
+            live_counts.setdefault(r["date"], {})[best["num"]] = \
+                live_counts.get(r["date"], {}).get(best["num"], 0) + 1
             stats["suggested"] += 1
             suggested.append({"date": r["date"], "trip": r["trip"], "member": r["member"],
                               "driver": best["num"], "name": best["name"],
