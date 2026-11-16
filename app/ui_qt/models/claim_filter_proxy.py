@@ -4,12 +4,26 @@ from PySide6.QtCore import QSortFilterProxyModel, Qt
 from ...status import status_of
 from .roles import SORT_ROLE, STATUS_ROLE
 
+# fields searched by a free-text term, and by `field:value` shortcuts
+SEARCH_FIELDS = ("member", "member_raw", "trip", "driver", "license", "vin", "date", "county")
+SHORTCUTS = {
+    "member": ("member", "member_raw"),
+    "name": ("member", "member_raw"),
+    "trip": ("trip",),
+    "driver": ("driver",),
+    "date": ("date",),
+    "license": ("license",),
+    "lic": ("license",),
+    "vin": ("vin",),
+    "county": ("county",),
+}
+
 
 class ClaimFilterProxy(QSortFilterProxyModel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._search = ""
-        self._status = None
+        self._terms = []          # [(fields, text)] — every term must match
+        self._statuses = set()
         self.setDynamicSortFilter(True)
         self.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
 
@@ -18,12 +32,21 @@ class ClaimFilterProxy(QSortFilterProxyModel):
         self.endFilterChange(QSortFilterProxyModel.Direction.Rows)
 
     def set_search(self, text):
-        self._search = (text or "").strip().casefold()
+        self._terms = []
+        for part in (text or "").split():
+            key, sep, value = part.partition(":")
+            if sep and key.casefold() in SHORTCUTS and value:
+                self._terms.append((SHORTCUTS[key.casefold()], value.casefold()))
+            else:
+                self._terms.append((SEARCH_FIELDS, part.casefold()))
+        self._invalidate()
+
+    def set_statuses(self, statuses):
+        self._statuses = set(statuses or ())
         self._invalidate()
 
     def set_status_filter(self, status):
-        self._status = status or None
-        self._invalidate()
+        self.set_statuses({status} if status else set())
 
     def filterAcceptsRow(self, source_row, source_parent):
         model = self.sourceModel()
@@ -32,13 +55,10 @@ class ClaimFilterProxy(QSortFilterProxyModel):
         row = model.row_at(source_row)
         if row is None:
             return False
-        if self._status and status_of(row) != self._status:
+        if self._statuses and status_of(row) not in self._statuses:
             return False
-        if self._search:
-            haystack = " ".join(
-                str(row.get(k) or "") for k in ("member", "member_raw", "trip", "driver")
-            ).casefold()
-            if self._search not in haystack:
+        for fields, term in self._terms:
+            if not any(term in str(row.get(key) or "").casefold() for key in fields):
                 return False
         return True
 

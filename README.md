@@ -92,6 +92,10 @@ cualquier chat futuro tenga acceso.
 > **Idioma y tema:** arriba a la derecha hay dos botones — uno de **idioma** (bandera 🇻🇪/🇺🇸, español por defecto)
 > y uno de **tema** (sol/luna, **modo oscuro por defecto**). Un clic en cada uno y listo.
 >
+> **Filtros:** los chips de estado se pueden combinar (clic para activar/desactivar) y **“Por revisar”**
+> junta SUGERIDO + REVISAR + ELEGIR. La búsqueda mira miembro, trip, driver, licencia, VIN, fecha y condado,
+> y acepta atajos como `driver:309`, `trip:M4F`, `date:10-09`. **Ctrl+F** enfoca la búsqueda, **Esc** limpia.
+>
 > **PU Time / DropOff Time:** el archivo de viajes trae la hora de la **cita** (dropoff), no la recogida. El app
 > fija el **DropOff** 1–5 min antes de la cita y estima el pickup con `DropOff − (14 min + 1.4×millas ± 3 min)`,
 > calibrado con los datos históricos (ver `docs/PU_TIME_FINDINGS.md` y `tests/test_pickup.py`).

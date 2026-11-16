@@ -121,6 +121,10 @@ class UiSmokeTests(unittest.TestCase):
         self.assertEqual(dialog.selected["num"], "200")
         dialog.deleteLater()
 
+    def test_count_and_review_chip(self):
+        self.assertIn("1 de 1", self.win.lbl_count.text())
+        self.assertEqual(self.win.summary._buttons["REVIEW"].text(), "Por revisar 0")
+
     def test_window_has_app_icon(self):
         self.assertFalse(self.win.windowIcon().isNull())
 

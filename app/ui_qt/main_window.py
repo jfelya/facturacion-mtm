@@ -105,7 +105,10 @@ class MainWindow(QMainWindow):
             self._shortcut("Ctrl+E", self.export_excel),
             self._shortcut("Ctrl+Shift+E", self.save_csv),
             self._shortcut("Ctrl+D", self.generate_driverlogs),
+            self._shortcut("Ctrl+Shift+P", self.generate_pdfs),
             self._shortcut("Ctrl+B", self.generate_bulk),
+            self._shortcut("Ctrl+F", self._focus_search),
+            self._shortcut("Esc", self._clear_filters),
             self._shortcut("F1", self.show_help),
         ]
 
@@ -264,7 +267,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(8)
 
         self.summary = SummaryStrip()
-        self.summary.status_selected.connect(self._summary_selected)
+        self.summary.statuses_selected.connect(self._summary_selected)
         layout.addWidget(self.summary)
 
         actions = QHBoxLayout()
@@ -282,7 +285,7 @@ class MainWindow(QMainWindow):
             actions.addWidget(button)
         actions.addStretch(1)
         self.search = QLineEdit()
-        self.search.setFixedWidth(260)
+        self.search.setFixedWidth(360)
         self.search.textChanged.connect(self._search_changed)
         actions.addWidget(self.search)
         self.btn_clear_filters = QPushButton()
@@ -379,6 +382,9 @@ class MainWindow(QMainWindow):
         bar.addWidget(self.status_dot)
         self.status_label = QLabel()
         bar.addWidget(self.status_label, 1)
+        self.lbl_count = QLabel()
+        self.lbl_count.setObjectName("Hint")
+        bar.addPermanentWidget(self.lbl_count)
         self.progress = QProgressBar()
         self.progress.setRange(0, 0)
         self.progress.setTextVisible(False)
@@ -441,6 +447,7 @@ class MainWindow(QMainWindow):
         self.tabs.setTabText(0, t("tab_preview"))
         self.tabs.setTabText(1, t("tab_report"))
         self.summary.set_all_text(t("all"))
+        self.summary.set_review_text(t("review"))
         self.empty_title.setText(t("empty_title"))
         self.empty_hint.setText(t("empty_hint"))
         self.detail.set_labels(t)
@@ -452,6 +459,7 @@ class MainWindow(QMainWindow):
         self.detail.set_row(self._selected_row)
         if not self.state.result:
             self.status_label.setText(t("st_idle"))
+        self._update_count()
 
     def toggle_theme(self):
         self.state.theme = "light" if self.state.theme == "dark" else "dark"
@@ -596,6 +604,7 @@ class MainWindow(QMainWindow):
         self._selected_row = None
         self.state.selected_key = None
         self._update_actions()
+        self._update_count()
         if key:
             self._select_key(key)
 
@@ -622,16 +631,27 @@ class MainWindow(QMainWindow):
         if row and status_of(row) in ("ELEGIR", "SUGERIDO", "REVISAR"):
             self.assign_selected()
 
-    def _summary_selected(self, status):
-        self.proxy.set_status_filter(None if status == "ALL" else status)
+    def _summary_selected(self, statuses):
+        self.proxy.set_statuses(statuses)
+        self._update_count()
 
     def _search_changed(self, text):
         self.proxy.set_search(text)
+        self._update_count()
+
+    def _focus_search(self):
+        self.search.setFocus()
+        self.search.selectAll()
 
     def _clear_filters(self):
         self.search.clear()
-        self.summary.select_status("ALL")
-        self.proxy.set_status_filter(None)
+        self.summary.select_statuses([])
+        self.proxy.set_statuses(set())
+        self._update_count()
+
+    def _update_count(self):
+        total = self.proxy.sourceModel().rowCount() if self.proxy.sourceModel() else 0
+        self.lbl_count.setText(self.state.t("filter_count", shown=self.proxy.rowCount(), total=total))
 
     # ------------------------------------------------------------------ assign
     def assign_selected(self):

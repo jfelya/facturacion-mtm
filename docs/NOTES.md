@@ -177,6 +177,11 @@ Layout: left source/options rail, summary/status chips, Preview/Report tabs, bot
 drawer, status bar. Status colors: OK, NOTA, SUGERIDO, BALANCEADO, REVISAR, ELEGIR, NO FACTURAR,
 FACTURADO, SIN DATO. Language (ES/EN) and dark/light are header toggles. 64-bit only.
 
+Filters: status chips combine (toggle), **Por revisar** = SUGERIDO + REVISAR + ELEGIR. Search covers
+member, trip, driver, license, VIN, date and county; `field:value` shortcuts (`driver:309`,
+`trip:M4F`, `date:10-09`) restrict a term. The status bar shows `shown de total filas`.
+**Ctrl+F** focuses the search, **Esc** clears all filters.
+
 CLI examples (unchanged):
 
 ```
