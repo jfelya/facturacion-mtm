@@ -3,7 +3,7 @@
 > **Last updated:** 2026-11-21. This is the current source of truth.
 > History and old decisions: `docs/HISTORY.md`. Time calibration: `docs/PU_TIME_FINDINGS.md`.
 > Portability/build details: `docs/PORTABILITY.md`. Working rules (communication, questions,
-> reporting): `docs/COMMUNICATION.md`.
+> reporting): `AGENTS.md`.
 
 ## 1. Purpose
 
