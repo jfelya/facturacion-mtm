@@ -45,6 +45,7 @@ Facturacion MTM/
 │   └── test/               # DATOS DE PRUEBA / referencia
 ├── docs/
 │   ├── NOTES.md            # estado actual (fuente de verdad)
+│   ├── COMMUNICATION.md    # reglas de comunicación con el dueño
 │   ├── HISTORY.md          # notas históricas
 │   ├── PU_TIME_FINDINGS.md # calibración de PU/DropOff
 │   └── PORTABILITY.md      # portabilidad / builds
